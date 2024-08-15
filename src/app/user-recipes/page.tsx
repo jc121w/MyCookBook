@@ -1,7 +1,7 @@
 "use client";
 import BackButton from "@/components/BackButton";
 import React, { useEffect } from "react";
-import { db } from "@/lib/db";
+
 import RecipeCard from "@/components/RecipeCard";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
