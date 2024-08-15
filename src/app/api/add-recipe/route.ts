@@ -1,4 +1,4 @@
-import { db } from "@/lib/db";
+import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const instructions = body.analyzedInstructions?.[0]?.steps?.[0]?.step || "";
     console.log("Instructions:", instructions);
 
-    const recipes = await db.recipes.create({
+    const recipes = await prisma.recipes.create({
       data: {
         id: body.id,
         name: body.title,
