@@ -2,8 +2,8 @@ import axios from "axios";
 import Link from "next/link";
 import React, { useState } from "react";
 import Alert from "./Alert";
-
-const ButtonAction = (props: { recipeid: number; recipe: [] }) => {
+import { Recipe } from "@/app/types";
+const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
   const [addedRecipe, setAddedRecipe] = useState(false);
   const addRecipeToDatabase = async () => {
     try {

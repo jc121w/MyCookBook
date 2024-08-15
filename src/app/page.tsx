@@ -6,7 +6,7 @@ import { Search, UtensilsCrossed } from "lucide-react";
 import { Span } from "next/dist/trace";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-
+import { Recipe } from "./types";
 export default function Home() {
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
@@ -23,7 +23,7 @@ export default function Home() {
     data: fetchedRecipes,
     isLoading: isLoadingRecipes,
     error: recipesError,
-  } = useQuery({
+  } = useQuery<Recipe[]>({
     queryKey: ["recipes", search, offset],
     queryFn: () => fetchRecipes(search, offset),
     enabled: !!search,
@@ -62,11 +62,12 @@ export default function Home() {
           <span className="font-semibold prose text-2xl"> No results</span>
         ) : (
           fetchedRecipes?.map((elem, index: number) => {
+            console.log(elem);
             return (
               <RecipeCard
                 title={elem.title}
                 src={elem.image}
-                cal={elem.nutrition?.nutrients[0].amount}
+                cal={String(elem.nutrition?.nutrients[0].amount)}
                 key={index}
                 id={elem.id}
                 recipe={elem}

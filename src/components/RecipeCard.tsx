@@ -2,13 +2,13 @@ import React from "react";
 import ButtonAction from "./ButtonAction";
 import Image from "next/image";
 import { title } from "process";
-
+import { Recipe } from "@/app/types";
 const RecipeCard = (props: {
   title: string;
   src: string;
   cal: string;
   id: number;
-  recipe: [];
+  recipe: Recipe;
 }) => {
   return (
     <div className="card bg-base-100 w-64 shadow-xl">
