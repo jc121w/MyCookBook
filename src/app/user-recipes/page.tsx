@@ -27,18 +27,20 @@ const Library = () => {
   if (recipesError) return <div>Error loading recipes</div>;
 
   return (
-    <div>
+    <div className="max-w-4xl flex flex-col items-center m-auto h-screen justify-start gap-10">
       <BackButton />
       This is the user recipe library
-      {recipes?.map((elem, index) => (
-        <RecipeCard
-          title={elem.name}
-          src={elem.src}
-          cal={String(elem.calories)}
-          key={index}
-          id={elem.id}
-        />
-      ))}
+      <div className="w-full h-fit grid items-center justify-center md:grid-cols-2 lg:grid-cols-3 gap-7 mt-10">
+        {recipes?.map((elem, index) => (
+          <RecipeCard
+            title={elem.name}
+            src={elem.src}
+            cal={String(elem.calories)}
+            key={index}
+            id={elem.id}
+          />
+        ))}
+      </div>
     </div>
   );
 };

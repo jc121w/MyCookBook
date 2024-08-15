@@ -35,9 +35,9 @@ export default function Home() {
     );
   if (recipesError) return <div>Error loading recipes</div>;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSearch(e.target.search.value);
+    setSearch((e.currentTarget as HTMLFormElement).search.value);
   };
   return (
     <main className=" max-w-4xl flex flex-col items-center m-auto h-screen justify-start gap-10">
