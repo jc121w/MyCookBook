@@ -22,3 +22,14 @@ export interface Recipe {
     }[];
   }[];
 }
+export interface PrismaRecipe {
+  id: number;
+  name: string;
+  src: string;
+  calories: number;
+  description: string | null;
+  ingredients: string;
+  instructions: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

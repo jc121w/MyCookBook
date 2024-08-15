@@ -5,14 +5,15 @@ import { db } from "@/lib/db";
 import RecipeCard from "@/components/RecipeCard";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Recipes } from "@prisma/client";
+import { PrismaRecipe } from "../types";
+import LibRecipeCard from "@/components/LibRecipeCard";
 const Library = () => {
   // fetch all recips
   const {
     data: recipes,
     isLoading: isLoadingRecipes,
     error: recipesError,
-  } = useQuery<Recipes[]>({
+  } = useQuery<PrismaRecipe[]>({
     queryKey: ["recipes"],
     queryFn: async () => {
       const response = await axios.get("/api/recipes");
@@ -32,7 +33,7 @@ const Library = () => {
       This is the user recipe library
       <div className="w-full h-fit grid items-center justify-center md:grid-cols-2 lg:grid-cols-3 gap-7 mt-10">
         {recipes?.map((elem, index) => (
-          <RecipeCard
+          <LibRecipeCard
             title={elem.name}
             src={elem.src}
             cal={String(elem.calories)}
