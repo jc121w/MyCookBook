@@ -8,7 +8,7 @@ const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
   const addRecipeToDatabase = async () => {
     try {
       console.log(props.recipe);
-      const response = await axios.post("/api/add-recipe", props.recipe);
+      const response = await axios.post("/api", props.recipe);
       setAddedRecipe(true);
       console.log("Recipe added:", response.data);
     } catch (error) {

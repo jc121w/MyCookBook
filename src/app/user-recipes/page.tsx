@@ -16,7 +16,7 @@ const Library = () => {
   } = useQuery<PrismaRecipe[]>({
     queryKey: ["recipes"],
     queryFn: async () => {
-      const response = await axios.get("/api/recipes");
+      const response = await axios.get("/api");
       return response.data;
     },
   });
