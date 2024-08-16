@@ -1,21 +1,26 @@
 "use client";
 import RecipeCard from "@/components/RecipeCard";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Search, UtensilsCrossed } from "lucide-react";
-import { Span } from "next/dist/trace";
-import Link from "next/link";
+import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Recipe } from "./types";
+import { useRouter, useSearchParams } from "next/navigation";
+
 export default function Home() {
-  const [search, setSearch] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const query = searchParams.get("search");
+  const offSet = searchParams.get("offset");
+  const [search, setSearch] = useState(query || "");
   const [offset, setOffset] = useState(0);
 
-  const API_KEY = "484e807b68fe4c63a1f69e17fc23764c";
+  const API_KEY = "6071011076f24918823d6fa3c45447a2";
 
-  const fetchRecipes = async (search: string, offset: number) => {
-    const url = `https://api.spoonacular.com/recipes/complexSearch?apiKey=${API_KEY}&query=${search}&number=8&offset=${offset}&addRecipeNutrition=true&addRecipeInstructions=true`;
+  const fetchRecipes = async () => {
+    const url = `https://api.spoonacular.com/recipes/complexSearch?apiKey=${API_KEY}&query=${query}&number=8&offset=${offSet}&addRecipeNutrition=true&addRecipeInstructions=true`;
     const response = await axios.get(url);
+
     return response.data.results;
   };
 
@@ -25,7 +30,7 @@ export default function Home() {
     error: recipesError,
   } = useQuery<Recipe[]>({
     queryKey: ["recipes", search, offset],
-    queryFn: () => fetchRecipes(search, offset),
+    queryFn: () => fetchRecipes(),
     enabled: !!search,
   });
 
@@ -38,7 +43,13 @@ export default function Home() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSearch((e.currentTarget as HTMLFormElement).search.value);
+    router.push(
+      `?search=${
+        (e.currentTarget as HTMLFormElement).search.value
+      }&offset=${offset}`
+    );
   };
+
   return (
     <main className=" max-w-4xl flex flex-col items-center m-auto h-screen justify-start gap-10">
       <form
