@@ -5,7 +5,6 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
-import SignUpButton from "../SignUpButton";
 
 type FormInputPost = {
   email: string;
