@@ -21,19 +21,16 @@ const Navbar = () => {
           </Link>
         </button>
 
-        <div className="collapse bg-base-200 w-fit ">
-          <input type="checkbox" />
-          <div className="collapse-title font-semibold flex gap-2">
-            {" "}
-            <User />
-            Username
-          </div>
-          <div className="collapse-content">
-            <Link href="/profile" className="flex items-center gap-2">
-              Profile
-            </Link>
-          </div>
-        </div>
+        <button className="btn btn-ghost">
+          <Link href="/profile" className="flex items-center gap-2">
+            <span className="font-semibold">Profile</span>
+          </Link>
+        </button>
+        <button className="btn btn-ghost">
+          <Link href="/sign-up" className="flex items-center gap-2">
+            <span className="font-semibold">Sign Up</span>
+          </Link>
+        </button>
       </div>
     </div>
   );

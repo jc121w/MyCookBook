@@ -42,7 +42,12 @@ export default function Home({
     return (
       <div className="text-center mt-10 font-semibold text-3xl">Loading...</div>
     );
-  if (recipesError) return <div>Error loading recipes</div>;
+  if (recipesError)
+    return (
+      <div className="text-center mt-10 font-semibold text-3xl text-red-600 prose">
+        Error loading recipes
+      </div>
+    );
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -29,7 +29,16 @@ const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
   });
 
   if (isPending)
-    return <div className="text-center  font-semibold">Loading...</div>;
+    return (
+      <div className="flex gap-3 justify-between items-end">
+        <button className="btn btn-sm btn-secondary w-16 h-9">
+          <Link href={`/recipe/${props.recipeid}`}>Info</Link>
+        </button>
+        <button className="btn btn-sm btn-primary w-16 h-9">
+          <span className="loading loading-spinner"></span>
+        </button>
+      </div>
+    );
 
   if (isError)
     return (

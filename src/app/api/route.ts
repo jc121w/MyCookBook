@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     return NextResponse.json(recipes, { status: 200 });
   } catch (error) {
     return NextResponse.json(
-      { message: "Could Not Fetch Recipes" },
+      { message: "Could Not Add Recipe" },
       { status: 500 }
     );
   }
