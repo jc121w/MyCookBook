@@ -42,9 +42,6 @@ export async function POST(req: Request) {
       { status: 200 }
     );
   } catch (error) {
-    return NextResponse.json(
-      { message: "Could Not Add Recipe" },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: "Could Not Log In" }, { status: 500 });
   }
 }
