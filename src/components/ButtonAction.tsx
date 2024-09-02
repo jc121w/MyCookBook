@@ -4,9 +4,11 @@ import React, { useEffect, useState } from "react";
 
 import { Recipe } from "@/app/types";
 import { useMutation } from "@tanstack/react-query";
-import Toast from "./Toast";
+import { Toast } from "./Toast";
+import { useRouter } from "next/navigation";
 
-const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
+export const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
+  const router = useRouter();
   const [success, setSuccess] = useState(false);
   const flip = () => {
     setSuccess(!success);
@@ -31,10 +33,10 @@ const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
   if (isPending)
     return (
       <div className="flex gap-3 justify-between items-end">
-        <button className="btn btn-sm btn-secondary w-16 h-9">
+        <button className=" rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-orange-600 bg-orange-300">
           <Link href={`/recipe/${props.recipeid}`}>Info</Link>
         </button>
-        <button className="btn btn-sm btn-primary w-16 h-9">
+        <button className="rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-green-600 bg-green-400">
           <span className="loading loading-spinner"></span>
         </button>
       </div>
@@ -52,7 +54,7 @@ const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
   if (isSuccess)
     return (
       <div className="flex gap-3 justify-between items-end">
-        <button className="btn btn-sm btn-secondary w-16 h-9">
+        <button className="rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-orange-600 bg-orange-300">
           <Link href={`/recipe/${props.recipeid}`}>Info</Link>
         </button>
         <Toast
@@ -66,14 +68,22 @@ const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
   const addRecipeToDatabase = () => {
     addRecipe(props.recipe);
   };
+
+  const saveToLocal = () => {
+    localStorage.setItem("currRecipe", JSON.stringify(props.recipe));
+    router.push(`/recipe/${props.recipeid}`);
+  };
   return (
     <div className="flex gap-3">
-      <button className="btn btn-sm btn-secondary w-16 h-9">
-        <Link href={`/recipe/${props.recipeid}`}>Info</Link>
+      <button
+        className=" rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-orange-600 bg-orange-300"
+        onClick={saveToLocal}
+      >
+        Info
       </button>
 
       <button
-        className="btn btn-sm btn-primary w-16 h-9"
+        className=" rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-green-600 bg-green-400"
         onClick={addRecipeToDatabase}
       >
         Add
@@ -81,5 +91,3 @@ const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
     </div>
   );
 };
-
-export default ButtonAction;

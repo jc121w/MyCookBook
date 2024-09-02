@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     // check if email already exists
 
-    const existingEmail = await prisma.user.findUnique({
+    const existingEmail = await prisma.userReg.findUnique({
       where: { email: email },
     });
     if (existingEmail) {
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.userReg.findUnique({
       where: { username: username },
     });
     if (existingUser) {
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     }
 
     const hashedPass = await hash(password, 10);
-    const newUser = await prisma.user.create({
+    const newUser = await prisma.userReg.create({
       data: {
         username,
         email,

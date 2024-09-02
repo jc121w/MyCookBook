@@ -1,9 +1,12 @@
 import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
+import { Ingredient, Nutrient, Step } from "../types";
 
 export async function GET() {
   try {
-    const recipes = await prisma.recipes.findMany();
+    const recipes = await prisma.recipe.findMany({
+      include: { nutrients: true, ingredients: true, steps: true },
+    });
     console.log("in the route", recipes);
     return NextResponse.json(recipes, { status: 200 });
   } catch (error) {
@@ -18,22 +21,41 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     console.log("in post", body);
-    const ingredients =
-      body.analyzedInstructions?.[0]?.steps?.[0]?.ingredients[0].name || [];
-    console.log("Ingredients:", ingredients);
 
-    const instructions = body.analyzedInstructions?.[0]?.steps?.[0]?.step || "";
-    console.log("Instructions:", instructions);
-
-    const recipes = await prisma.recipes.create({
+    const recipes = await prisma.recipe.create({
       data: {
         id: body.id,
-        name: body.title,
-        src: body.image,
-        calories: body.nutrition.nutrients[0].amount,
-        description: body.summary,
-        ingredients: ingredients,
-        instructions: instructions,
+        title: body.title,
+        image: body.image,
+        cheap: body.cheap,
+        readyInMinutes: body.readyInMinutes,
+        servings: body.servings,
+        summary: body.summary,
+        nutrients: {
+          create: body.nutrition.nutrients.map((currNutrient: Nutrient) => ({
+            name: currNutrient.name,
+            amount: currNutrient.amount,
+            unit: currNutrient.unit,
+          })),
+        },
+        ingredients: {
+          create: body.nutrition.ingredients.map(
+            (currIngredient: Ingredient) => ({
+              name: currIngredient.name,
+              amount: currIngredient.amount,
+              unit: currIngredient.unit,
+            })
+          ),
+        },
+        steps: {
+          create: body.analyzedInstructions[0].steps.map((currStep: Step) => ({
+            number: currStep.number,
+            step: currStep.step,
+            stepIngredients: currStep.ingredients.map(
+              (currStepIngredients: Ingredient) => currStepIngredients.name
+            ),
+          })),
+        },
       },
     });
     console.log(recipes);

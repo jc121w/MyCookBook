@@ -1,10 +1,10 @@
-import NextAuth, { NextAuthOptions } from "next-auth";
+import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import prisma from "./db";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-
-export const authOptions = {
-  adapter: PrismaAdapter(prisma),
+import { Adapter } from "next-auth/adapters";
+export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma) as Adapter,
   providers: [
     GoogleProvider({
       clientId:
@@ -17,19 +17,7 @@ export const authOptions = {
         (() => {
           throw new Error("GOOGLE_SECRET is not defined");
         })(),
-      authorization: {
-        params: {
-          prompt: "consent",
-          access_type: "offline",
-          response_type: "code",
-        },
-      },
     }),
   ],
-  session: {
-    strategy: "database", // Optional, defaults to 'jwt' if you don’t need database sessions
-  },
-  pages: {
-    signIn: "/auth/signin",
-  },
+  secret: process.env.NEXTAUTH_SECRET_KEY,
 };

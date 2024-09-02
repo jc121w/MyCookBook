@@ -1,6 +1,6 @@
 import React from "react";
 
-const Alert = () => {
+export const Alert = () => {
   return (
     <div role="alert" className="alert alert-success">
       <svg
@@ -20,5 +20,3 @@ const Alert = () => {
     </div>
   );
 };
-
-export default Alert;

@@ -1,8 +1,14 @@
 import { NotebookText, User, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
 import React from "react";
-
-const Navbar = () => {
+import { getServerSession } from "next-auth";
+import { signIn, signOut } from "next-auth/react";
+import { authOptions } from "@/lib/auth";
+import { SignOutButton } from "./buttons/SignOutButton";
+import Image from "next/image";
+export const Navbar = async () => {
+  const session = await getServerSession(authOptions);
+  console.log(session);
   return (
     <div className="navbar bg-base-100 border-b max-h-8">
       <div className="navbar-start">
@@ -21,19 +27,26 @@ const Navbar = () => {
           </Link>
         </button>
 
-        <button className="btn btn-ghost">
-          <Link href="/profile" className="flex items-center gap-2">
-            <span className="font-semibold">Profile</span>
-          </Link>
-        </button>
-        <button className="btn btn-ghost">
-          <Link href="/sign-up" className="flex items-center gap-2">
-            <span className="font-semibold">Sign Up</span>
-          </Link>
-        </button>
+        {session?.user ? (
+          <div className="flex items-center">
+            <button className="btn btn-ghost">
+              <Link href="/profile">
+                <span className="font-semibold">Profile</span>
+              </Link>
+            </button>
+            <span className="font-semibold">{session?.user?.name} </span>
+            <SignOutButton />
+          </div>
+        ) : (
+          <div>
+            <button className="btn btn-ghost">
+              <Link href="/sign-in" className="flex items-center gap-2">
+                <span className="font-semibold">Sign In</span>
+              </Link>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
 };
-
-export default Navbar;

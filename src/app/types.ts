@@ -10,26 +10,59 @@ export interface Recipe {
   image: string;
   nutrition: {
     nutrients: {
+      name: string;
       amount: number;
+      unit: string;
     }[];
+    ingredients: { name: string; amount: number; unit: string }[];
   };
-  description: string;
   summary: string;
   analyzedInstructions: {
     steps: {
+      number: number;
       ingredients: { name: string }[];
       step: string;
     }[];
   }[];
+  cheap: boolean;
+  readyInMinutes: number;
+  servings: number;
 }
-export interface PrismaRecipe {
+export interface RecipeSimplified {
+  id: number;
+  title: string;
+  image: string;
+  cheap: boolean;
+  readyInMinutes: number;
+  servings: number;
+  summary: string;
+  nutrients: {
+    name: string;
+    amount: number;
+    unit: string;
+  }[];
+  ingredients: { name: string; amount: number; unit: string }[];
+  steps: {
+    number: number;
+    stepIngredients: { name: string }[];
+    step: string;
+  }[];
+}
+export interface Step {
+  number: number;
+  step: string;
+  ingredients: Ingredient[];
+}
+
+export interface Ingredient {
   id: number;
   name: string;
-  src: string;
-  calories: number;
-  description: string | null;
-  ingredients: string;
-  instructions: string;
-  createdAt: Date;
-  updatedAt: Date;
+  amount: number;
+  unit: string;
+}
+
+export interface Nutrient {
+  name: string;
+  amount: number;
+  unit: string;
 }

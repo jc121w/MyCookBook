@@ -119,7 +119,7 @@ const SignIn = () => {
         </button>
         <button
           type="button"
-          onClick={signIn()}
+          onClick={() => signIn()}
           className={`btn w-full ${isPending ? "btn-primary" : "btn-neutral"}`}
           disabled={isPending} // Disable button when loading
         >

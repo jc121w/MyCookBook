@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 
-const Toast = (props: {
+export const Toast = (props: {
   message: string;
   title: string;
   visible: boolean;
@@ -14,7 +14,7 @@ const Toast = (props: {
 
       return () => clearTimeout(timer);
     }
-  }, [props.visible]);
+  }, [props.visible, props.close]);
 
   return (
     <div>
@@ -27,5 +27,3 @@ const Toast = (props: {
     </div>
   );
 };
-
-export default Toast;

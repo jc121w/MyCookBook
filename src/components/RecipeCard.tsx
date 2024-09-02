@@ -1,9 +1,9 @@
 import React from "react";
-import ButtonAction from "./ButtonAction";
+import { ButtonAction } from "./ButtonAction";
 import Image from "next/image";
 import { title } from "process";
 import { Recipe } from "@/app/types";
-const RecipeCard = (props: {
+export const RecipeCard = (props: {
   title: string;
   src: string;
   cal: string;
@@ -23,7 +23,7 @@ const RecipeCard = (props: {
       </figure>
       <div className="card-body text-sm p-5">
         <h2 className="card-title">{props.title} </h2>
-        <div className="card-actions justify-between mt-3 flex items-center w-full">
+        <div className="card-actions justify-between mt-3 flex items-end w-full">
           <span className=" font-semibold">
             <span className="text-lg">{String(props.cal).split(".")[0]}</span>{" "}
             Cal
@@ -39,4 +39,3 @@ RecipeCard.defaultProps = {
   src: "/no_image.png",
   cal: "0",
 };
-export default RecipeCard;
