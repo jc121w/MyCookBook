@@ -4,8 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Search } from "lucide-react";
 import { useState } from "react";
-import { Recipe } from "./types";
+
 import { useRouter, useSearchParams } from "next/navigation";
+import { Recipe } from "../types";
 
 export default function Home({
   searchParams,
