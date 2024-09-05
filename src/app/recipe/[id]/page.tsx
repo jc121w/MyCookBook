@@ -36,7 +36,7 @@ const RecipeDetailPage: FC<RecipeDetailPageProps> = ({ params }) => {
             recipe.analyzedInstructions[0]?.steps.map((step: Step) => ({
               number: step.number,
               stepIngredients: step.ingredients.map(
-                (ingredient) => ingredient.name
+                (ingredient) => ingredient.name,
               ),
               step: step.step,
             })) || [],
@@ -59,22 +59,22 @@ const RecipeDetailPage: FC<RecipeDetailPageProps> = ({ params }) => {
 
   if (isLoadingRecipes)
     return (
-      <div className="text-center mt-10 font-semibold text-3xl">Loading...</div>
+      <div className="mt-10 text-center text-3xl font-semibold">Loading...</div>
     );
   if (recipesError)
     return (
-      <div className="text-center mt-10 font-semibold text-3xl text-red-600">
+      <div className="mt-10 text-center text-3xl font-semibold text-red-600">
         Error loading recipe
       </div>
     );
   return (
-    <div className="max-w-screen-xl px-2.5 md:px-20 mx-auto h-full 2xl:max-w-screen-2xl ">
+    <div>
       <BackButton />
       {fetchedRecipe ? (
         <>
-          <div className="flex xl:flex-row flex-col gap-8 items-start">
+          <div className="flex flex-col items-start gap-8 xl:flex-row">
             <div>
-              <h3 className="font-bold text-2xl py-5 text-pretty">
+              <h3 className="text-pretty py-5 text-2xl font-bold">
                 {fetchedRecipe.title}
               </h3>
               <Image
@@ -82,11 +82,11 @@ const RecipeDetailPage: FC<RecipeDetailPageProps> = ({ params }) => {
                 alt=""
                 width={500}
                 height={0}
-                className="w-fit rounded-lg hover:scale-110 transition-transform duration-200"
+                className="w-fit rounded-lg transition-transform duration-200 hover:scale-110"
               />
             </div>
-            <div className="flex flex-col py-6 gap-3">
-              <div className="flex gap-5 ">
+            <div className="flex flex-col gap-3 py-6">
+              <div className="flex flex-wrap gap-5">
                 {" "}
                 <span className="italic">
                   {" "}
@@ -113,7 +113,7 @@ const RecipeDetailPage: FC<RecipeDetailPageProps> = ({ params }) => {
                   Fat: {Math.round(fetchedRecipe.nutrients[1].amount)}g
                 </span>
               </div>
-              <p className="prose max-w-xl border  p-3 rounded-lg bg-orange-200 bg-opacity-70 ">
+              <p className="prose max-w-xl rounded-lg border bg-orange-200 bg-opacity-70 p-3">
                 {" "}
                 {fetchedRecipe.summary
                   .replace(/<\/?[^>]+(>|$)/g, "")
@@ -122,38 +122,38 @@ const RecipeDetailPage: FC<RecipeDetailPageProps> = ({ params }) => {
             </div>
           </div>
 
-          <h3 className="text-2xl font-semibold py-5">Ingredients</h3>
-          <div className="flex gap-3 flex-wrap">
+          <h3 className="py-5 text-2xl font-semibold">Ingredients</h3>
+          <div className="flex flex-wrap gap-3">
             {fetchedRecipe.ingredients.map((elem, index) => {
               const frac = new Fraction(elem.amount).toFraction(true);
               return (
                 <div
                   key={index}
-                  className="border rounded-lg p-2 bg-sky-400 font-medium"
+                  className="rounded-lg border bg-sky-400 p-2 font-medium"
                 >
                   {frac} {elem.unit} {elem.name}
                 </div>
               );
             })}
           </div>
-          <div className=" flex flex-col gap-5 my-10">
+          <div className="my-10 flex flex-col gap-5">
             {fetchedRecipe.steps.map((elem, index) => {
               return (
                 <div
-                  className="border p-3 rounded-lg bg-orange-200 bg-opacity-70 flex flex-col gap-2"
+                  className="flex flex-col gap-2 rounded-lg border bg-orange-200 bg-opacity-70 p-3"
                   key={index}
                 >
-                  <h4 className="font-semibold text-xl"> Step {elem.number}</h4>
+                  <h4 className="text-xl font-semibold"> Step {elem.number}</h4>
                   <div>
                     {" "}
-                    <span className="font-medium text-lg">
+                    <span className="text-lg font-medium">
                       Ingredients Needed:{" "}
                     </span>
                     <span className="text-lime-600">
                       {elem.stepIngredients.join(", ")}
                     </span>
                   </div>
-                  <p className="prose prose-zinc prose-lg">{elem.step}</p>
+                  <p className="prose prose-lg prose-zinc">{elem.step}</p>
                 </div>
               );
             })}

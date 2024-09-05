@@ -51,7 +51,7 @@ const SignUp = () => {
   return (
     <form
       onSubmit={handleSubmit(submit)}
-      className="flex flex-col gap-5 p-5 w-fit border m-auto mt-32 bg-slate-200"
+      className="m-auto mt-32 flex w-fit flex-col gap-5 border bg-slate-200 p-5"
     >
       <div>
         <label className="input input-bordered flex items-center gap-2">
@@ -66,7 +66,7 @@ const SignUp = () => {
           />
         </label>{" "}
         {errors.email && (
-          <span className="text-red-600 prose">{errors.email?.message}</span>
+          <span className="prose text-red-600">{errors.email?.message}</span>
         )}
       </div>
       <div>
@@ -94,9 +94,7 @@ const SignUp = () => {
           />
         </label>
         {errors.username && (
-          <span className="text-red-600 prose ">
-            {errors.username?.message}
-          </span>
+          <span className="prose text-red-600">{errors.username?.message}</span>
         )}
       </div>
       <div>
@@ -134,7 +132,7 @@ const SignUp = () => {
         </button>
       </div>
       {isError && (
-        <span className="text-red-600 text-center">
+        <span className="text-center text-red-600">
           {errorMessage || "Error Occured"}
         </span>
       )}

@@ -13,7 +13,7 @@ export const Navbar = async () => {
     <div className="navbar bg-base-100 border-b max-h-8">
       <div className="navbar-start">
         {" "}
-        <Link href="/" className="btn btn-ghost text-xl">
+        <Link href="/" className="btn btn-ghost text-xl" prefetch={false}>
           <NotebookText className="ml-4 w-8 h-8" />
           MyCookBook
         </Link>
@@ -21,7 +21,11 @@ export const Navbar = async () => {
       <div className="navbar-center"></div>
       <div className="navbar-end">
         <button className="btn btn-ghost">
-          <Link href="/user-recipes" className="flex items-center gap-2">
+          <Link
+            href="/user-recipes"
+            className="flex items-center gap-2"
+            prefetch={false}
+          >
             <UtensilsCrossed />
             <span className="font-semibold">Library</span>
           </Link>
@@ -30,11 +34,11 @@ export const Navbar = async () => {
         {session?.user ? (
           <div className="flex items-center">
             <button className="btn btn-ghost">
-              <Link href="/profile">
+              <Link href="/profile" prefetch={false}>
                 <span className="font-semibold">Profile</span>
               </Link>
             </button>
-            <span className="font-semibold">{session?.user?.name} </span>
+
             <SignOutButton />
           </div>
         ) : (

@@ -1,11 +1,12 @@
 "use client";
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import { Mail, RectangleEllipsis, User } from "lucide-react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import Link from "next/link";
 
 type FormInputPost = {
   email: string;
@@ -13,75 +14,51 @@ type FormInputPost = {
   password: string;
 };
 
-interface ErrorResponse {
-  message: string;
-}
 const SignIn = () => {
   const router = useRouter();
+  const [error, setError] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormInputPost>();
 
-  const submit: SubmitHandler<FormInputPost> = (data) => {
-    console.log(data);
-    addUser(data);
+  const onSubmit: SubmitHandler<FormInputPost> = async (data) => {
+    // Pass in form data to Sign in
+    const signInData = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
+    console.log("Ret: ", signInData);
+    if (signInData?.error) {
+      console.log("error: ", signInData.error);
+      setError(true);
+    } else {
+      router.push("/");
+      router.refresh();
+    }
   };
 
-  const {
-    mutate: addUser,
-    isPending,
-    isError,
-    error,
-  } = useMutation({
-    mutationFn: (newUserData: FormInputPost) => {
-      return axios.post("/api/user", newUserData);
-    },
-    onError: (error) => {
-      console.error("Error adding User:", error);
-    },
-    onSuccess: () => {
-      router.push("/");
-      console.log("User Successfull Logged In");
-    },
-  });
-  const errorMessage = isError
-    ? (error as AxiosError<ErrorResponse>)?.response?.data?.message
-    : null;
   return (
     <form
-      onSubmit={handleSubmit(submit)}
+      onSubmit={handleSubmit(onSubmit)}
       className="flex flex-col gap-5 p-5 w-fit border m-auto mt-32 bg-slate-200"
     >
       <div>
         <label className="input input-bordered flex items-center gap-2">
-          <User />
+          <Mail />
           <input
-            type="text"
+            type="email"
             className="grow"
-            placeholder="Username"
-            {...register("username", {
+            placeholder="Email"
+            {...register("email", {
               required: true,
-              pattern: {
-                value: /^[a-zA-Z0-9_-]{3,20}$/,
-                message: "Invalid Username",
-              },
-              minLength: {
-                value: 3,
-                message: "Username must be at least 3 characters",
-              },
-              maxLength: {
-                value: 20,
-                message: "Username must be less than 20 characters",
-              },
             })}
           />
-        </label>
-        {errors.username && (
-          <span className="text-red-600 prose ">
-            {errors.username?.message}
-          </span>
+        </label>{" "}
+        {errors.email && (
+          <span className="text-red-600 prose">{errors.email?.message}</span>
         )}
       </div>
       <div>
@@ -106,35 +83,33 @@ const SignIn = () => {
         )}
       </div>
       <div className="flex flex-col gap-5">
-        <button
-          type="submit"
-          className={`btn w-full ${isPending ? "btn-primary" : "btn-neutral"}`}
-          disabled={isPending} // Disable button when loading
-        >
-          {isPending ? (
-            <span className="loading loading-spinner"></span>
-          ) : (
-            "Sign In"
-          )}
+        <button type="submit" className={`btn w-full  btn-neutral`}>
+          Sign In
         </button>
         <button
           type="button"
-          onClick={() => signIn()}
-          className={`btn w-full ${isPending ? "btn-primary" : "btn-neutral"}`}
-          disabled={isPending} // Disable button when loading
+          onClick={async () =>
+            await signIn("google", { callbackUrl: "/profile" })
+          }
+          className={`btn w-full btn-neutral`}
         >
-          {isPending ? (
-            <span className="loading loading-spinner"></span>
-          ) : (
-            "Sign In with Google"
-          )}
+          Sign In with Google
         </button>
       </div>
-      {isError && (
-        <span className="text-red-600 text-center">
-          {errorMessage || "Error Occured"}
-        </span>
-      )}
+      <div className="flex flex-col items-center gap-5">
+        <div className="w-9/12 h-[2px] bg-slate-500 m-auto"></div>{" "}
+        <Link
+          href="/sign-up"
+          className="hover:scale-110 transition-transform duration-200 underline text-blue-800"
+        >
+          Don&apos;t have an account?
+        </Link>
+        {error ? (
+          <div className="text-red-600">Error Incorrect Credentials</div>
+        ) : (
+          ""
+        )}
+      </div>
     </form>
   );
 };

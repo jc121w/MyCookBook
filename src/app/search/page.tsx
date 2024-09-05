@@ -41,11 +41,11 @@ export default function Home({
 
   if (isLoadingRecipes)
     return (
-      <div className="text-center mt-10 font-semibold text-3xl">Loading...</div>
+      <div className="mt-10 text-center text-3xl font-semibold">Loading...</div>
     );
   if (recipesError)
     return (
-      <div className="text-center mt-10 font-semibold text-3xl text-red-600 prose">
+      <div className="prose mt-10 text-center text-3xl font-semibold text-red-600">
         Error loading recipes
       </div>
     );
@@ -56,20 +56,20 @@ export default function Home({
     router.push(
       `?search=${
         (e.currentTarget as HTMLFormElement).search.value
-      }&offset=${offset}`
+      }&offset=${offset}`,
     );
   };
 
   return (
-    <main className=" max-w-4xl flex flex-col items-center m-auto h-screen justify-start gap-10">
+    <main className="m-auto flex h-screen max-w-4xl flex-col items-center justify-start gap-10">
       <form
         onSubmit={handleSubmit}
-        className="border rounded-lg w-80 h-12 flex justify-between items-center mt-8 relative"
+        className="relative mt-8 flex h-12 w-80 items-center justify-between rounded-lg border"
       >
         <input
           type="text"
           name="search"
-          className="h-full w-full rounded-lg block p-5"
+          className="block h-full w-full rounded-lg p-5"
           placeholder="Find a recipe"
         ></input>{" "}
         <button type="submit" className="absolute right-5">
@@ -77,10 +77,10 @@ export default function Home({
           <Search />
         </button>
       </form>
-      <div className="w-full h-fit grid items-center justify-center md:grid-cols-2 lg:grid-cols-3 gap-7 mt-10">
+      <div className="mt-10 grid h-fit w-full items-center justify-center gap-7 md:grid-cols-2 lg:grid-cols-3">
         {" "}
         {fetchedRecipes?.length == 0 ? (
-          <span className="font-semibold prose text-2xl"> No results</span>
+          <span className="prose text-2xl font-semibold"> No results</span>
         ) : (
           fetchedRecipes?.map((elem, index: number) => {
             return (

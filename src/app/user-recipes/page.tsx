@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { RecipeSimplified } from "../types";
 import { LibRecipeCard } from "@/components/LibRecipeCard";
+import { RecipeForm } from "@/components/form/RecipeForm";
 const Library = () => {
   // fetch all recips
   const {
@@ -25,16 +26,41 @@ const Library = () => {
     console.log(recipes);
 
     return (
-      <div className="text-center mt-10 font-semibold text-3xl">Loading...</div>
+      <div className="mt-10 text-center text-3xl font-semibold">Loading...</div>
     );
   }
   if (recipesError) return <div>Error loading recipes</div>;
 
   return (
-    <div className="max-w-4xl flex flex-col items-center m-auto justify-start gap-10">
-      <BackButton />
-      This is the user recipe library
-      <div className="w-full h-fit grid items-center justify-center md:grid-cols-2 lg:grid-cols-3 gap-7 mt-10">
+    <div className="m-auto flex max-w-4xl flex-col items-start justify-start gap-10">
+      <div className="flex w-3/5 justify-between">
+        <BackButton />
+        <button
+          className="mt-5 flex h-12 w-24 select-none items-center justify-center rounded-xl border transition-all duration-200 hover:scale-[1.15] hover:bg-slate-200"
+          onClick={() => {
+            const dialog = document.getElementById(
+              "my_modal_1",
+            ) as HTMLDialogElement;
+            dialog.showModal();
+          }}
+        >
+          Create
+        </button>
+
+        <dialog id="my_modal_1" className="modal">
+          <div className="modal-box">
+            <h3 className="text-lg font-bold">Add Recipe</h3>
+            <RecipeForm />
+            <div className="modal-action">
+              <form method="dialog">
+                <button className="btn">Close</button>
+              </form>
+            </div>
+          </div>
+        </dialog>
+      </div>
+
+      <div className="mt-10 grid h-fit w-full items-center justify-center gap-7 md:grid-cols-2 lg:grid-cols-3">
         {recipes?.map((elem, index) => (
           <LibRecipeCard
             title={elem.title}
