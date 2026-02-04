@@ -1,10 +1,11 @@
 "use client";
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
 import { Mail, RectangleEllipsis, User } from "lucide-react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
+import { signUp } from "@/lib/actions/auth-actions";
 
 type FormInputPost = {
   email: string;
@@ -15,15 +16,17 @@ type FormInputPost = {
 interface ErrorResponse {
   message: string;
 }
+
 const SignUp = () => {
   const router = useRouter();
+  const [cerror, setError] = useState("");
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormInputPost>();
 
-  const submit: SubmitHandler<FormInputPost> = (data) => {
+  const submit: SubmitHandler<FormInputPost> = async (data) => {
     console.log(data);
     addUser(data);
   };
@@ -34,8 +37,17 @@ const SignUp = () => {
     isError,
     error,
   } = useMutation({
-    mutationFn: (newUserData: FormInputPost) => {
-      return axios.post("/api/user", newUserData);
+    mutationFn: async (newUserData: FormInputPost) => {
+      //   return axios.post("/api/user", newUserData);
+      const result = await signUp(
+        newUserData.email,
+        newUserData.email,
+        newUserData.email,
+      );
+      if (!result.user) {
+        throw new Error("Signup failed");
+      }
+      return result;
     },
     onError: (error) => {
       console.error("Error adding User:", error);

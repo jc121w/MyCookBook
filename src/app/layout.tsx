@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
-import Providers from "@/components//providers/Providers";
-import { getServerSession } from "next-auth";
-import SessionProvider from "@/components/providers/SessionProvider";
 import { Roboto_Mono } from "next/font/google";
-import { authOptions } from "@/lib/auth";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import Providers from "@/components/providers/Providers";
 
 const inter = Inter({ subsets: ["latin"] });
 const roboto_mono = Roboto_Mono({
@@ -24,19 +23,16 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
+  const session = await auth.api.getSession({ headers: await headers() });
   return (
     <html lang="en">
       <body className={roboto_mono.className}>
-        <SessionProvider session={session}>
-          <Providers>
-            {" "}
-            <Navbar />
-            <div className="mx-auto h-full max-w-screen-xl px-8 md:px-20 2xl:max-w-screen-2xl">
-              {children}
-            </div>
-          </Providers>{" "}
-        </SessionProvider>
+        <Providers>
+          <Navbar session={session} />
+          <div className="mx-auto h-full max-w-screen-xl px-8 md:px-20 2xl:max-w-screen-2xl">
+            {children}
+          </div>
+        </Providers>
       </body>
     </html>
   );

@@ -1,13 +1,14 @@
 import SignIn from "@/components/form/SignIn";
-import React from "react";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-const page = () => {
-  return (
-    <div>
-      {" "}
-      <SignIn />
-    </div>
-  );
-};
+export default async function SignInPage() {
+  const session = await auth.api.getSession({ headers: await headers() });
 
-export default page;
+  if (session) {
+    redirect("/profile");
+  }
+
+  return <SignIn />;
+}

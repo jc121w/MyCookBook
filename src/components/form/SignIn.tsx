@@ -2,10 +2,11 @@
 import React, { FC, useState } from "react";
 import { Mail, RectangleEllipsis, User } from "lucide-react";
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
+
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+
+import { signIn, signInSocial } from "@/lib/actions/auth-actions";
+import { auth } from "@/lib/auth";
 import Link from "next/link";
 
 type FormInputPost = {
@@ -16,7 +17,7 @@ type FormInputPost = {
 
 const SignIn = () => {
   const router = useRouter();
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
   const {
     register,
     handleSubmit,
@@ -24,26 +25,20 @@ const SignIn = () => {
   } = useForm<FormInputPost>();
 
   const onSubmit: SubmitHandler<FormInputPost> = async (data) => {
-    // Pass in form data to Sign in
-    const signInData = await signIn("credentials", {
-      email: data.email,
-      password: data.password,
-      redirect: false,
-    });
-    console.log("Ret: ", signInData);
-    if (signInData?.error) {
-      console.log("error: ", signInData.error);
-      setError(true);
-    } else {
-      router.push("/");
-      router.refresh();
+    try {
+      const result = await signIn(data.email, data.password);
+      if (!result.user) {
+        setError("Invalid email or password");
+      }
+    } catch (error) {
+      setError("An error occurred");
     }
   };
 
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-col gap-5 p-5 w-fit border m-auto mt-32 bg-slate-200"
+      className="m-auto mt-32 flex w-fit flex-col gap-5 border bg-slate-200 p-5"
     >
       <div>
         <label className="input input-bordered flex items-center gap-2">
@@ -58,7 +53,7 @@ const SignIn = () => {
           />
         </label>{" "}
         {errors.email && (
-          <span className="text-red-600 prose">{errors.email?.message}</span>
+          <span className="prose text-red-600">{errors.email?.message}</span>
         )}
       </div>
       <div>
@@ -83,32 +78,33 @@ const SignIn = () => {
         )}
       </div>
       <div className="flex flex-col gap-5">
-        <button type="submit" className={`btn w-full  btn-neutral`}>
+        <button type="submit" className={`btn btn-neutral w-full`}>
           Sign In
         </button>
         <button
           type="button"
-          onClick={async () =>
-            await signIn("google", { callbackUrl: "/profile" })
-          }
-          className={`btn w-full btn-neutral`}
+          onClick={async () => await signInSocial("google")}
+          className={`btn btn-neutral w-full`}
         >
           Sign In with Google
         </button>
+        <button
+          type="button"
+          onClick={async () => await signInSocial("github")}
+          className={`btn btn-neutral w-full`}
+        >
+          Sign In with Github
+        </button>
       </div>
       <div className="flex flex-col items-center gap-5">
-        <div className="w-9/12 h-[2px] bg-slate-500 m-auto"></div>{" "}
+        <div className="m-auto h-[2px] w-9/12 bg-slate-500"></div>{" "}
         <Link
           href="/sign-up"
-          className="hover:scale-110 transition-transform duration-200 underline text-blue-800"
+          className="text-blue-800 underline transition-transform duration-200 hover:scale-110"
         >
           Don&apos;t have an account?
         </Link>
-        {error ? (
-          <div className="text-red-600">Error Incorrect Credentials</div>
-        ) : (
-          ""
-        )}
+        {error.length > 0 && <span className="text-red-600">{error}</span>}
       </div>
     </form>
   );

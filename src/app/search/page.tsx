@@ -1,5 +1,5 @@
 "use client";
-import { RecipeCard } from "@/components/RecipeCard";
+import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { Search } from "lucide-react";
@@ -15,8 +15,8 @@ export default function Home({
 }) {
   const router = useRouter();
   console.log(searchParams);
-  const query = searchParams.search;
-  const offSet = searchParams.offset;
+  const query = searchParams.search || "";
+  const offSet = searchParams.offset || "0";
   const [search, setSearch] = useState(query || "");
   const [offset, setOffset] = useState(0);
 

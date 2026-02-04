@@ -5,7 +5,7 @@ import React, { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { RecipeSimplified } from "../types";
-import { LibRecipeCard } from "@/components/LibRecipeCard";
+import { LibRecipeCard } from "@/components/recipes/LibRecipeCard";
 import { RecipeForm } from "@/components/form/RecipeForm";
 const Library = () => {
   // fetch all recips

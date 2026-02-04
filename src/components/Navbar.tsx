@@ -1,20 +1,17 @@
 import { NotebookText, User, UtensilsCrossed } from "lucide-react";
 import Link from "next/link";
-import React from "react";
-import { getServerSession } from "next-auth";
-import { signIn, signOut } from "next-auth/react";
-import { authOptions } from "@/lib/auth";
 import { SignOutButton } from "./buttons/SignOutButton";
-import Image from "next/image";
-export const Navbar = async () => {
-  const session = await getServerSession(authOptions);
+import { auth } from "@/lib/auth";
+
+type Session = typeof auth.$Infer.Session;
+export const Navbar = async ({ session }: { session: Session | null }) => {
   console.log(session);
   return (
-    <div className="navbar bg-base-100 border-b max-h-8">
+    <div className="navbar max-h-8 border-b bg-base-100">
       <div className="navbar-start">
         {" "}
         <Link href="/" className="btn btn-ghost text-xl" prefetch={false}>
-          <NotebookText className="ml-4 w-8 h-8" />
+          <NotebookText className="ml-4 h-8 w-8" />
           MyCookBook
         </Link>
       </div>
@@ -31,7 +28,7 @@ export const Navbar = async () => {
           </Link>
         </button>
 
-        {session?.user ? (
+        {session && (
           <div className="flex items-center">
             <button className="btn btn-ghost">
               <Link href="/profile" prefetch={false}>
@@ -41,7 +38,8 @@ export const Navbar = async () => {
 
             <SignOutButton />
           </div>
-        ) : (
+        )}
+        {!session && (
           <div>
             <button className="btn btn-ghost">
               <Link href="/sign-in" className="flex items-center gap-2">
