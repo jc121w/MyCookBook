@@ -2,7 +2,7 @@
 
 import { signOut } from "@/lib/actions/auth-actions";
 import { useRouter } from "next/navigation";
-
+import { LogOut } from "lucide-react";
 export const SignOutButton = () => {
   const router = useRouter();
   const handleSignOut = async () => {
@@ -11,6 +11,7 @@ export const SignOutButton = () => {
   };
   return (
     <button className="btn btn-ghost" onClick={handleSignOut}>
+      <LogOut />
       <span className="font-semibold">Sign Out</span>
     </button>
   );

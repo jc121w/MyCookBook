@@ -35,11 +35,6 @@ export default function LandingPage() {
       </div>
       <span className="text-lg">Thanks for visiting my app.</span>
       <p className="text-lg">Begin by searching your first recipe</p>
-
-      <DownArrow />
-      <Link href="/search">
-        <Search className="mt-16 h-14 w-14 cursor-pointer transition-transform duration-200 hover:scale-125" />
-      </Link>
     </div>
   );
 }
