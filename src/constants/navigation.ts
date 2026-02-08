@@ -20,8 +20,8 @@ export type SidebarProps = {
 };
 
 export const sideBarLinks: SidebarLink[] = [
-  { href: "/search", label: "Find Recipe", icon: Search },
+  { href: "/search", label: "Discover Recipes", icon: Search },
   { href: "/profile", label: "Profile", icon: User },
-  { href: "/library", label: "Library", icon: UtensilsCrossed },
-  { href: "/profile/settings", label: "Settings", icon: Settings },
+  { href: "/library", label: "My Recipes", icon: UtensilsCrossed },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];

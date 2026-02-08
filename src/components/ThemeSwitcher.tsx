@@ -1,8 +1,22 @@
+"use client";
+import { useEffect, useState } from "react";
+
 export default function ThemeSwitcher() {
+  const [isDark, setIsDark] = useState(true);
+
+  useEffect(() => {
+    const html = document.querySelector("html");
+    html?.setAttribute("data-theme", isDark ? "dark" : "light");
+  }, [isDark]);
   return (
     <div>
       <label className="swap swap-rotate">
-        <input type="checkbox" className="theme-controller" value="dark" />
+        <input
+          type="checkbox"
+          className="theme-controller"
+          value="dark"
+          onChange={(e) => setIsDark(e.target.checked)}
+        />
 
         <svg
           className="swap-off h-6 w-6 fill-current"

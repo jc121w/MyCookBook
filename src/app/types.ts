@@ -5,64 +5,62 @@ export interface Nutrition {
   }[];
 }
 export interface Recipe {
-  id: number;
-  title: string;
+  uri: string;
+  label: string;
   image: string;
-  nutrition: {
-    nutrients: {
-      name: string;
-      amount: number;
-      unit: string;
-    }[];
-    ingredients: { name: string; amount: number; unit: string }[];
+  images: {
+    THUMBNAIL: { url: string; width: number; height: number };
+    SMALL: { url: string; width: number; height: number };
+    REGULAR: { url: string; width: number; height: number };
+    LARGE?: { url: string; width: number; height: number };
   };
-  summary: string;
-  analyzedInstructions: {
-    steps: {
-      number: number;
-      ingredients: { name: string }[];
-      step: string;
-    }[];
+  source: string;
+  url: string; // Link to original recipe (for cooking instructions)
+  yield: number;
+  dietLabels: string[];
+  healthLabels: string[];
+  ingredientLines: string[];
+  ingredients: {
+    foodId: string;
+    quantity: number;
+    measure: { uri: string; label: string };
+    weight: number;
+    food: string;
+    foodCategory: string;
   }[];
-  cheap: boolean;
-  readyInMinutes: number;
-  servings: number;
-}
-export interface RecipeSimplified {
-  id: number;
-  title: string;
-  image: string;
-  cheap: boolean;
-  readyInMinutes: number;
-  servings: number;
-  summary: string;
-  nutrients: {
-    name: string;
-    amount: number;
-    unit: string;
-  }[];
-  ingredients: { name: string; amount: number; unit: string }[];
-  steps: {
-    number: number;
-    stepIngredients: { name: string }[];
-    step: string;
-  }[];
-}
-export interface Step {
-  number: number;
-  step: string;
-  ingredients: Ingredient[];
+  calories: number;
+  totalWeight: number;
+  totalTime: number;
+  cuisineType: string[];
+  mealType: string[];
+  dishType: string[];
+  totalNutrients: Record<
+    string,
+    {
+      label: string;
+      quantity: number;
+      unit: string;
+    }
+  >;
+  totalDaily: Record<
+    string,
+    {
+      label: string;
+      quantity: number;
+      unit: string;
+    }
+  >;
 }
 
-export interface Ingredient {
-  id: number;
-  name: string;
-  amount: number;
-  unit: string;
-}
-
-export interface Nutrient {
-  name: string;
-  amount: number;
-  unit: string;
+export interface EdamamSearchResponse {
+  from: number;
+  to: number;
+  count: number;
+  _links: {
+    next?: { href: string; title: string };
+  };
+  hits: {
+    recipe: Recipe;
+    _links: { self: { href: string } };
+  }[];
 }

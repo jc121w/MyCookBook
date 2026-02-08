@@ -1,9 +1,10 @@
 "use client";
-import { Ingredient, Recipe, RecipeSimplified, Step } from "@/app/types";
+
 import { useQuery } from "@tanstack/react-query";
 import React, { FC } from "react";
 import Image from "next/image";
 import { BackButton } from "@/components/BackButton";
+import { Recipe } from "@/app/types";
 
 interface RecipeDetailPageProps {
   params: {
@@ -52,7 +53,7 @@ const RecipeDetailPage: FC<RecipeDetailPageProps> = ({ params }) => {
     data: fetchedRecipe,
     isLoading: isLoadingRecipes,
     error: recipesError,
-  } = useQuery<RecipeSimplified | null>({
+  } = useQuery<Recipe | null>({
     queryKey: ["recipes", recipeID],
     queryFn: () => getRecipeFromLocal(),
   });

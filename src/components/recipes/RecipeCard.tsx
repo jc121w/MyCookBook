@@ -11,15 +11,9 @@ export const RecipeCard = (props: {
   recipe: Recipe;
 }) => {
   return (
-    <div className="card w-64 bg-base-100 shadow-xl">
-      <figure className="overflow-hidden p-3 shadow-md shadow-slate-400">
-        <Image
-          src={props.src}
-          alt=""
-          width={225}
-          height={0}
-          className="w-fit rounded-lg"
-        />
+    <div className="card h-72 w-96 bg-primary text-primary-content shadow-xl">
+      <figure className="overflow-hidden shadow-md shadow-slate-400">
+        <img src={props.src} alt="" className="rounded-lg object-cover" />
       </figure>
       <div className="card-body p-5 text-sm">
         <h2 className="card-title">{props.title} </h2>

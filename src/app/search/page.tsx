@@ -6,37 +6,23 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Recipe } from "../types";
+import { EdamamSearchResponse, Recipe } from "../types";
+import { fetchRecipe, RecipeFilters } from "@/lib/edamam";
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined };
-}) {
+export default function RecipesPage() {
   const router = useRouter();
-  console.log(searchParams);
-  const query = searchParams.search || "";
-  const offSet = searchParams.offset || "0";
-  const [search, setSearch] = useState(query || "");
+  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
-
-  const API_KEY = "6071011076f24918823d6fa3c45447a2";
-
-  const fetchRecipes = async () => {
-    const url = `https://api.spoonacular.com/recipes/complexSearch?apiKey=${API_KEY}&query=${query}&number=8&offset=${offSet}&addRecipeNutrition=true&addRecipeInstructions=true`;
-    const response = await axios.get(url);
-
-    return response.data.results;
-  };
-
+  const [filters, setFilters] = useState<RecipeFilters>({});
   const {
-    data: fetchedRecipes,
+    data: data,
     isLoading: isLoadingRecipes,
     error: recipesError,
-  } = useQuery<Recipe[]>({
-    queryKey: ["recipes", search, offset],
-    queryFn: () => fetchRecipes(),
-    enabled: !!search,
+  } = useQuery<EdamamSearchResponse>({
+    queryKey: ["recipes", query, offset],
+    queryFn: () => fetchRecipe(query, filters),
+    enabled: !!query,
   });
 
   if (isLoadingRecipes)
@@ -52,12 +38,8 @@ export default function Home({
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSearch((e.currentTarget as HTMLFormElement).search.value);
-    router.push(
-      `?search=${
-        (e.currentTarget as HTMLFormElement).search.value
-      }&offset=${offset}`,
-    );
+    setQuery(search);
+    router.push(`?search=${query}&offset=${offset}`);
   };
 
   return (
@@ -69,6 +51,7 @@ export default function Home({
         <input
           type="text"
           name="search"
+          onChange={(search) => setSearch(search.target.value)}
           className="block h-full w-full rounded-lg p-5"
           placeholder="Find a recipe"
         ></input>{" "}
@@ -79,18 +62,19 @@ export default function Home({
       </form>
       <div className="mt-10 grid h-fit w-full items-center justify-center gap-7 md:grid-cols-2 lg:grid-cols-3">
         {" "}
-        {fetchedRecipes?.length == 0 ? (
+        {data?.hits?.length == 0 ? (
           <span className="prose text-2xl font-semibold"> No results</span>
         ) : (
-          fetchedRecipes?.map((elem, index: number) => {
+          data?.hits.map((hit, index: number) => {
+            const currRecipe = hit.recipe;
             return (
               <RecipeCard
-                title={elem.title}
-                src={elem.image}
-                cal={String(elem.nutrition?.nutrients[0].amount)}
-                key={index}
-                id={elem.id}
-                recipe={elem}
+                title={currRecipe.label}
+                src={currRecipe.image}
+                cal={String(currRecipe.calories)}
+                key={currRecipe.uri}
+                id={index}
+                recipe={currRecipe}
               />
             );
           })
