@@ -1,4 +1,4 @@
-# 🍳 [Project Name]
+# 🍳 [MyCookBook]
 
 > A full-stack web app for building recipes and designing weekly meal plans.
 
@@ -32,7 +32,7 @@ Lead with the *why* — it's what makes a reader care.
 <!-- For a visual app, this is one of the highest-value sections.
      A live demo link + 1–3 screenshots or a short GIF beats paragraphs of text. -->
 
-🔗 **Live demo:** [your-app-url.com](https://your-app-url.com)
+🔗 **Live demo:** [https://my-cook-book-three.vercel.app/](https://your-app-url.com)
 
 ![Recipe builder screenshot](./docs/screenshots/recipe-builder.png)
 
