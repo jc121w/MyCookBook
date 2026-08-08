@@ -11,6 +11,7 @@
 ## 📖 Overview
 
 A 2–4 sentence description. What problem does it solve, and for whom?
+intro to cooking, knife advice, cheap nutricious, an app that helps teach you the cooking fundamentals and and how to create a healthy and sustainable meal plan and recipe repetoir to fit your nnutritional goals, beginner friendly
 
 Example: "Home cooks juggle scattered recipes and struggle to plan balanced
 weeks of meals. [Project Name] lets users build a personal recipe library, then
