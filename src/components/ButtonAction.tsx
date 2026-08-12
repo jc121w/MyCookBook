@@ -59,7 +59,7 @@ export const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
         </button>
         <Toast
           message="Successfully added to your library."
-          title={props.recipe.title}
+          title={props.recipe.label}
           visible={success}
           close={flip}
         />

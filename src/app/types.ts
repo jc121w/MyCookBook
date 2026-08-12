@@ -52,6 +52,46 @@ export interface Recipe {
   >;
 }
 
+// Types for recipes saved in the local Prisma database
+export interface SavedNutrient {
+  id: number;
+  name: string;
+  amount: number;
+  unit: string;
+  recipeId: number;
+}
+
+export interface SavedIngredient {
+  id: number;
+  name: string;
+  amount: number;
+  unit: string;
+  recipeId: number;
+}
+
+export interface SavedStep {
+  id: number;
+  number: number;
+  stepIngredients: string[];
+  step: string;
+  recipeId: number;
+}
+
+export interface RecipeSimplified {
+  id: number;
+  title: string;
+  image: string;
+  cheap: boolean;
+  readyInMinutes: number;
+  servings: number;
+  summary: string;
+  nutrients: SavedNutrient[];
+  ingredients: SavedIngredient[];
+  steps: SavedStep[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface EdamamSearchResponse {
   from: number;
   to: number;

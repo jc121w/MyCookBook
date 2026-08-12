@@ -1,35 +1,51 @@
-import React from "react";
-import { ButtonAction } from "../ButtonAction";
-import Image from "next/image";
-import { title } from "process";
+"use client";
+
+import Link from "next/link";
 import { Recipe } from "@/app/types";
-export const RecipeCard = (props: {
-  title: string;
-  src: string;
-  cal: string;
-  id: number;
+
+function extractRecipeId(uri: string): string {
+  // URI format: "http://www.edamam.com/ontologies/edamam.owl#recipe_abc123"
+  return uri.split("#recipe_")[1] ?? uri;
+}
+
+export const RecipeCard = ({
+  recipe,
+}: {
   recipe: Recipe;
 }) => {
+  const recipeId = extractRecipeId(recipe.uri);
+
+  const handleClick = () => {
+    localStorage.setItem(`recipe_${recipeId}`, JSON.stringify(recipe));
+  };
+
   return (
-    <div className="card h-72 w-96 bg-primary text-primary-content shadow-xl">
-      <figure className="overflow-hidden shadow-md shadow-slate-400">
-        <img src={props.src} alt="" className="rounded-lg object-cover" />
+    <Link
+      href={`/recipe/${recipeId}`}
+      onClick={handleClick}
+      className="card h-72 w-96 bg-base-300 shadow-sm transition-transform duration-200 hover:scale-105"
+    >
+      <figure className="h-32 shrink-0">
+        <img src={recipe.image} alt={recipe.label} className="w-full object-cover" />
       </figure>
-      <div className="card-body p-5 text-sm">
-        <h2 className="card-title">{props.title} </h2>
-        <div className="card-actions mt-3 flex w-full items-end justify-between">
-          <span className="font-semibold">
-            <span className="text-lg">{String(props.cal).split(".")[0]}</span>{" "}
-            Cal
-          </span>
-          <ButtonAction recipeid={props.id} recipe={props.recipe} />
+      <div className="card-body flex-1">
+        <h2 className="card-title text-sm">
+          {recipe.label}
+        </h2>
+        <div className="card-actions flex-wrap gap-1">
+          <div className="badge badge-secondary">
+            {Math.round(recipe.calories)} cal
+          </div>
+          {recipe.totalTime > 0 && (
+            <div className="badge badge-outline">{recipe.totalTime} min</div>
+          )}
+          {recipe.cuisineType?.map((c) => (
+            <div key={c} className="badge badge-outline capitalize">
+              {c}
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    </Link>
   );
-};
-RecipeCard.defaultProps = {
-  title: "Default",
-  src: "/no_image.png",
-  cal: "0",
 };

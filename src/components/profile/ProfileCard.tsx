@@ -13,7 +13,7 @@ type ProfileCardProps = {
 
 export default function ProfileCard({ name, email, img }: ProfileCardProps) {
   return (
-    <div className="is-drawer-close:hidden flex flex-col items-center gap-2">
+    <div className="flex cursor-default flex-col items-center gap-2 is-drawer-close:hidden">
       <div className="avatar p-3">
         <div className="w-20 rounded-full">
           {img ? <img src={img} /> : <CircleUser className="h-auto w-20" />}

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 
 export default function ThemeSwitcher() {
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
     const html = document.querySelector("html");

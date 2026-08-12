@@ -2,7 +2,7 @@ import axios from "axios";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 
-import { Recipe, RecipeSimplified } from "@/app/types";
+import { RecipeSimplified } from "@/app/types";
 import { useMutation } from "@tanstack/react-query";
 import { Toast } from "./Toast";
 import { useRouter } from "next/navigation";

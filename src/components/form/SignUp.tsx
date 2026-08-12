@@ -41,8 +41,8 @@ const SignUp = () => {
       //   return axios.post("/api/user", newUserData);
       const result = await signUp(
         newUserData.email,
-        newUserData.email,
-        newUserData.email,
+        newUserData.password,
+        newUserData.username,
       );
       if (!result.user) {
         throw new Error("Signup failed");
@@ -66,7 +66,7 @@ const SignUp = () => {
       className="m-auto mt-32 flex w-fit flex-col gap-5 border bg-slate-200 p-5"
     >
       <div>
-        <label className="input input-bordered flex items-center gap-2">
+        <label className="input-bordered input flex items-center gap-2">
           <Mail />
           <input
             type="email"
@@ -82,7 +82,7 @@ const SignUp = () => {
         )}
       </div>
       <div>
-        <label className="input input-bordered flex items-center gap-2">
+        <label className="input-bordered input flex items-center gap-2">
           <User />
           <input
             type="text"
@@ -110,7 +110,7 @@ const SignUp = () => {
         )}
       </div>
       <div>
-        <label className="input input-bordered flex items-center gap-2">
+        <label className="input-bordered input flex items-center gap-2">
           <RectangleEllipsis />
           <input
             type="password"

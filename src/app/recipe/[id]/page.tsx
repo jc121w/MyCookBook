@@ -1,170 +1,177 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import React, { FC } from "react";
 import Image from "next/image";
+import { useParams } from "next/navigation";
 import { BackButton } from "@/components/BackButton";
 import { Recipe } from "@/app/types";
+import { ExternalLink } from "lucide-react";
+import axios from "axios";
 
-interface RecipeDetailPageProps {
-  params: {
-    id: string;
-  };
+async function fetchRecipeById(id: string): Promise<Recipe> {
+  // Try localStorage first (set when clicking a RecipeCard)
+  const cached = localStorage.getItem(`recipe_${id}`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  // Fallback: fetch from Edamam via our API route
+  const { data } = await axios.get(`/api/recipes/${id}`);
+  return data.recipe;
 }
 
-const RecipeDetailPage: FC<RecipeDetailPageProps> = ({ params }) => {
-  const Fraction = require("fraction.js");
-  const recipeID = params.id;
-  const getRecipeFromLocal = () => {
-    const recipeString = localStorage.getItem("currRecipe");
+function getNutrient(recipe: Recipe, key: string): number {
+  return Math.round(recipe.totalNutrients[key]?.quantity ?? 0);
+}
 
-    if (recipeString) {
-      let recipe = JSON.parse(recipeString);
-
-      if ("nutrition" in recipe) {
-        // then it's not simplified
-        recipe = {
-          id: recipe.id,
-          title: recipe.title,
-          image: recipe.image,
-          cheap: recipe.cheap,
-          readyInMinutes: recipe.readyInMinutes,
-          servings: recipe.servings,
-          summary: recipe.summary,
-          nutrients: recipe.nutrition.nutrients,
-          ingredients: recipe.nutrition.ingredients,
-          steps:
-            recipe.analyzedInstructions[0]?.steps.map((step: Step) => ({
-              number: step.number,
-              stepIngredients: step.ingredients.map(
-                (ingredient) => ingredient.name,
-              ),
-              step: step.step,
-            })) || [],
-        };
-      }
-      console.log(recipe);
-      return recipe;
-    }
-    return null;
-  };
+export default function RecipeDetailPage() {
+  const { id } = useParams<{ id: string }>();
 
   const {
-    data: fetchedRecipe,
-    isLoading: isLoadingRecipes,
-    error: recipesError,
-  } = useQuery<Recipe | null>({
-    queryKey: ["recipes", recipeID],
-    queryFn: () => getRecipeFromLocal(),
+    data: recipe,
+    isLoading,
+    error,
+  } = useQuery<Recipe>({
+    queryKey: ["recipe", id],
+    queryFn: () => fetchRecipeById(id),
+    enabled: !!id,
   });
 
-  if (isLoadingRecipes)
+  if (isLoading) {
     return (
       <div className="mt-10 text-center text-3xl font-semibold">Loading...</div>
     );
-  if (recipesError)
+  }
+
+  if (error || !recipe) {
     return (
       <div className="mt-10 text-center text-3xl font-semibold text-red-600">
         Error loading recipe
       </div>
     );
+  }
+
   return (
-    <div>
+    <div className="max-w-4xl">
       <BackButton />
-      {fetchedRecipe ? (
-        <>
-          <div className="flex flex-col items-start gap-8 xl:flex-row">
-            <div>
-              <h3 className="text-pretty py-5 text-2xl font-bold">
-                {fetchedRecipe.title}
-              </h3>
-              <Image
-                src={fetchedRecipe.image}
-                alt=""
-                width={500}
-                height={0}
-                className="w-fit rounded-lg transition-transform duration-200 hover:scale-110"
-              />
-            </div>
-            <div className="flex flex-col gap-3 py-6">
-              <div className="flex flex-wrap gap-5">
-                {" "}
-                <span className="italic">
-                  {" "}
-                  Serves: {fetchedRecipe.servings}
-                </span>
-                <span className="italic">
-                  {" "}
-                  Time: {fetchedRecipe.readyInMinutes} min
-                </span>
-                <span className="italic">
-                  {" "}
-                  Calories: {Math.round(fetchedRecipe.nutrients[0].amount)}kcal
-                </span>{" "}
-                <span className="italic">
-                  {" "}
-                  Protein: {Math.round(fetchedRecipe.nutrients[10].amount)}g
-                </span>
-                <span className="italic">
-                  {" "}
-                  Sugar: {Math.round(fetchedRecipe.nutrients[5].amount)}g
-                </span>
-                <span className="italic">
-                  {" "}
-                  Fat: {Math.round(fetchedRecipe.nutrients[1].amount)}g
-                </span>
-              </div>
-              <p className="prose max-w-xl rounded-lg border bg-orange-200 bg-opacity-70 p-3">
-                {" "}
-                {fetchedRecipe.summary
-                  .replace(/<\/?[^>]+(>|$)/g, "")
-                  .replace(/If you like this recipe.*/, "")}
-              </p>
-            </div>
+
+      {/* Header */}
+      <div className="mt-6 flex flex-col items-start gap-8 xl:flex-row">
+        <div className="shrink-0">
+          <h1 className="text-pretty py-5 text-2xl font-bold">
+            {recipe.label}
+          </h1>
+          <Image
+            src={recipe.image}
+            alt={recipe.label}
+            width={500}
+            height={350}
+            className="rounded-lg"
+          />
+        </div>
+
+        {/* Quick stats */}
+        <div className="flex flex-col gap-3 py-6">
+          <div className="flex flex-wrap gap-3">
+            <span className="badge badge-lg">Serves: {recipe.yield}</span>
+            {recipe.totalTime > 0 && (
+              <span className="badge badge-lg">
+                Time: {recipe.totalTime} min
+              </span>
+            )}
+            <span className="badge badge-secondary badge-lg">
+              {Math.round(recipe.calories)} cal
+            </span>
+            <span className="badge badge-lg">
+              Protein: {getNutrient(recipe, "PROCNT")}g
+            </span>
+            <span className="badge badge-lg">
+              Fat: {getNutrient(recipe, "FAT")}g
+            </span>
+            <span className="badge badge-lg">
+              Carbs: {getNutrient(recipe, "CHOCDF")}g
+            </span>
+            <span className="badge badge-lg">
+              Sugar: {getNutrient(recipe, "SUGAR")}g
+            </span>
+            <span className="badge badge-lg">
+              Fiber: {getNutrient(recipe, "FIBTG")}g
+            </span>
           </div>
 
-          <h3 className="py-5 text-2xl font-semibold">Ingredients</h3>
-          <div className="flex flex-wrap gap-3">
-            {fetchedRecipe.ingredients.map((elem, index) => {
-              const frac = new Fraction(elem.amount).toFraction(true);
-              return (
-                <div
-                  key={index}
-                  className="rounded-lg border bg-sky-400 p-2 font-medium"
-                >
-                  {frac} {elem.unit} {elem.name}
-                </div>
-              );
-            })}
+          {/* Labels */}
+          <div className="flex flex-wrap gap-2">
+            {recipe.dietLabels.map((label) => (
+              <span key={label} className="badge badge-accent">
+                {label}
+              </span>
+            ))}
+            {recipe.healthLabels.slice(0, 6).map((label) => (
+              <span key={label} className="badge badge-outline">
+                {label}
+              </span>
+            ))}
           </div>
-          <div className="my-10 flex flex-col gap-5">
-            {fetchedRecipe.steps.map((elem, index) => {
-              return (
-                <div
-                  className="flex flex-col gap-2 rounded-lg border bg-orange-200 bg-opacity-70 p-3"
-                  key={index}
-                >
-                  <h4 className="text-xl font-semibold"> Step {elem.number}</h4>
-                  <div>
-                    {" "}
-                    <span className="text-lg font-medium">
-                      Ingredients Needed:{" "}
-                    </span>
-                    <span className="text-lime-600">
-                      {elem.stepIngredients.join(", ")}
-                    </span>
-                  </div>
-                  <p className="prose prose-lg prose-zinc">{elem.step}</p>
-                </div>
-              );
-            })}
+
+          {/* Cuisine / Meal / Dish type */}
+          <div className="flex flex-wrap gap-2 text-sm opacity-70">
+            {recipe.cuisineType?.map((c) => (
+              <span key={c} className="capitalize">
+                {c}
+              </span>
+            ))}
+            {recipe.mealType?.map((m) => (
+              <span key={m} className="capitalize">
+                · {m}
+              </span>
+            ))}
+            {recipe.dishType?.map((d) => (
+              <span key={d} className="capitalize">
+                · {d}
+              </span>
+            ))}
           </div>
-        </>
-      ) : (
-        <p> Loading Recipe</p>
-      )}
+        </div>
+      </div>
+
+      {/* Ingredients */}
+      <h2 className="py-5 text-2xl font-semibold">Ingredients</h2>
+      <ul className="flex flex-col gap-2">
+        {recipe.ingredientLines.map((line, i) => (
+          <li key={i} className="rounded-lg border bg-base-200 p-3">
+            {line}
+          </li>
+        ))}
+      </ul>
+
+      {/* Instructions link */}
+      <div className="my-10">
+        <a
+          href={recipe.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn btn-primary gap-2"
+        >
+          <ExternalLink size={18} />
+          View Full Instructions on {recipe.source}
+        </a>
+        <p className="mt-2 text-sm opacity-60">
+          Edamam provides ingredients and nutrition — full cooking instructions
+          are on the original recipe site.
+        </p>
+      </div>
+
+      {/* Full Nutrition */}
+      <h2 className="py-5 text-2xl font-semibold">Nutrition Facts</h2>
+      <div className="mb-10 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
+        {Object.entries(recipe.totalNutrients).map(([key, nutrient]) => (
+          <div key={key} className="rounded-lg border bg-base-200 p-2 text-sm">
+            <span className="font-medium">{nutrient.label}</span>
+            <br />
+            {Math.round(nutrient.quantity)} {nutrient.unit}
+          </div>
+        ))}
+      </div>
     </div>
   );
-};
-
-export default RecipeDetailPage;
+}

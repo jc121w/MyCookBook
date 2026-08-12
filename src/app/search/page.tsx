@@ -6,7 +6,7 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { EdamamSearchResponse, Recipe } from "../types";
+import { EdamamSearchResponse } from "../types";
 import { fetchRecipe, RecipeFilters } from "@/lib/edamam";
 
 export default function RecipesPage() {
@@ -60,24 +60,17 @@ export default function RecipesPage() {
           <Search />
         </button>
       </form>
-      <div className="mt-10 grid h-fit w-full items-center justify-center gap-7 md:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-10 grid h-fit w-full items-center justify-center gap-8 md:grid-cols-2 lg:grid-cols-3">
         {" "}
         {data?.hits?.length == 0 ? (
           <span className="prose text-2xl font-semibold"> No results</span>
         ) : (
-          data?.hits.map((hit, index: number) => {
-            const currRecipe = hit.recipe;
-            return (
+          data?.hits.map((hit) => (
               <RecipeCard
-                title={currRecipe.label}
-                src={currRecipe.image}
-                cal={String(currRecipe.calories)}
-                key={currRecipe.uri}
-                id={index}
-                recipe={currRecipe}
+                key={hit.recipe.uri}
+                recipe={hit.recipe}
               />
-            );
-          })
+          ))
         )}
       </div>
     </main>

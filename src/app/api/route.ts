@@ -1,6 +1,6 @@
 import prisma from "@/lib/db";
 import { NextResponse } from "next/server";
-import { Ingredient, Nutrient, Step } from "../types";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 
 export async function GET() {
   try {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
         servings: body.servings,
         summary: body.summary,
         nutrients: {
-          create: body.nutrition.nutrients.map((currNutrient: Nutrient) => ({
+          create: body.nutrition.nutrients.map((currNutrient: any) => ({
             name: currNutrient.name,
             amount: currNutrient.amount,
             unit: currNutrient.unit,
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
         },
         ingredients: {
           create: body.nutrition.ingredients.map(
-            (currIngredient: Ingredient) => ({
+            (currIngredient: any) => ({
               name: currIngredient.name,
               amount: currIngredient.amount,
               unit: currIngredient.unit,
@@ -48,11 +48,11 @@ export async function POST(req: Request) {
           ),
         },
         steps: {
-          create: body.analyzedInstructions[0].steps.map((currStep: Step) => ({
+          create: body.analyzedInstructions[0].steps.map((currStep: any) => ({
             number: currStep.number,
             step: currStep.step,
             stepIngredients: currStep.ingredients.map(
-              (currStepIngredients: Ingredient) => currStepIngredients.name
+              (currStepIngredients: any) => currStepIngredients.name
             ),
           })),
         },

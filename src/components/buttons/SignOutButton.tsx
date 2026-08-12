@@ -10,12 +10,12 @@ export const SignOutButton = () => {
     router.push("/sign-in");
   };
   return (
-    <button
-      className="is-drawer-close:tooltip is-drawer-close:tooltip-right btn btn-ghost"
+    <div
+      className="is-drawer-close:tooltip is-drawer-close:tooltip-right"
       onClick={handleSignOut}
     >
-      <LogOut />
+      <LogOut size={20} />
       <span className="is-drawer-close:hidden">Sign Out</span>
-    </button>
+    </div>
   );
 };

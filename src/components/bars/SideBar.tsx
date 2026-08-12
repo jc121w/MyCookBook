@@ -7,16 +7,17 @@ import { SignOutButton } from "../buttons/SignOutButton";
 
 export default function SideBar({ session, drawerId, links }: SidebarProps) {
   return (
-    <div className="is-drawer-close:overflow-visible drawer-side bg-base-300">
+    <div className="drawer-side bg-base-300 is-drawer-close:overflow-visible">
       <label
         htmlFor={drawerId}
         aria-label="close sidebar"
         className="drawer-overlay"
       ></label>
-      <div className="is-drawer-close:w-14 is-drawer-open:w-64 flex min-h-full flex-col items-center bg-base-200 p-2">
+      <div className="flex min-h-full flex-col bg-base-200 p-2 is-drawer-close:w-14 is-drawer-open:w-64">
         <ul className="menu min-h-full grow gap-3">
-          <li>
-            <div className="flex items-start">
+          <div className="flex items-start">
+            <li>
+              {" "}
               {session && (
                 <ProfileCard
                   name={session.user.name}
@@ -24,15 +25,17 @@ export default function SideBar({ session, drawerId, links }: SidebarProps) {
                   img={session.user.image ?? undefined}
                 />
               )}{" "}
+            </li>
+            <li>
               <label
                 htmlFor="profile-drawer"
-                className="btn btn-square btn-ghost"
+                className="flex cursor-pointer justify-end"
               >
-                <ChevronsLeft className="is-drawer-open:block hidden" />
-                <ChevronsRight className="is-drawer-open:hidden block" />
+                <ChevronsLeft className="hidden is-drawer-open:block" />
+                <ChevronsRight className="block is-drawer-open:hidden" />
               </label>
-            </div>
-          </li>
+            </li>
+          </div>
 
           {links.map((link) => (
             <li key={link.href}>
@@ -47,7 +50,7 @@ export default function SideBar({ session, drawerId, links }: SidebarProps) {
           ))}
 
           {session && (
-            <li className="flex items-center">
+            <li>
               <SignOutButton />
             </li>
           )}
@@ -55,9 +58,9 @@ export default function SideBar({ session, drawerId, links }: SidebarProps) {
             <li>
               <Link
                 href="/sign-in"
-                className="is-drawer-close:tooltip is-drawer-close:tooltip-right flex items-center gap-2"
+                className="is-drawer-close:tooltip is-drawer-close:tooltip-right"
               >
-                <LogIn />
+                <LogIn size={20} />
                 <span className="is-drawer-close:hidden">Sign In</span>
               </Link>
             </li>
