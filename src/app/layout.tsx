@@ -25,7 +25,7 @@ export default async function RootLayout({
 }>) {
   const session = await auth.api.getSession({ headers: await headers() });
   return (
-    <html lang="en">
+    <html lang="en" data-theme="caramellatte">
       <body className={roboto_mono.className}>
         <Providers>
           <Navbar session={session} />

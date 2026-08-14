@@ -7,7 +7,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Toast } from "./Toast";
 import { useRouter } from "next/navigation";
 
-export const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
+export const ButtonAction = (props: { recipeid: String; recipe: Recipe }) => {
   const router = useRouter();
   const [success, setSuccess] = useState(false);
   const flip = () => {
@@ -32,11 +32,11 @@ export const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
 
   if (isPending)
     return (
-      <div className="flex gap-3 justify-between items-end">
-        <button className=" rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-orange-600 bg-orange-300">
+      <div className="flex items-end justify-between gap-3">
+        <button className="mt-5 flex h-9 w-16 select-none items-center justify-center rounded-xl bg-orange-300 transition-all duration-200 hover:scale-[1.15] hover:bg-orange-600">
           <Link href={`/recipe/${props.recipeid}`}>Info</Link>
         </button>
-        <button className="rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-green-600 bg-green-400">
+        <button className="mt-5 flex h-9 w-16 select-none items-center justify-center rounded-xl bg-green-400 transition-all duration-200 hover:scale-[1.15] hover:bg-green-600">
           <span className="loading loading-spinner"></span>
         </button>
       </div>
@@ -44,17 +44,17 @@ export const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
 
   if (isError)
     return (
-      <div className="flex gap-3 justify-between items-end">
-        <button className="btn btn-sm btn-secondary w-16 h-9">
+      <div className="flex items-end justify-between gap-3">
+        <button className="btn btn-secondary btn-sm h-9 w-16">
           <Link href={`/recipe/${props.recipeid}`}>Info</Link>
         </button>
-        <span className="font-semibold text-lg">Error</span>
+        <span className="text-lg font-semibold">Error</span>
       </div>
     );
   if (isSuccess)
     return (
-      <div className="flex gap-3 justify-between items-end">
-        <button className="rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-orange-600 bg-orange-300">
+      <div className="flex items-end justify-between gap-3">
+        <button className="mt-5 flex h-9 w-16 select-none items-center justify-center rounded-xl bg-orange-300 transition-all duration-200 hover:scale-[1.15] hover:bg-orange-600">
           <Link href={`/recipe/${props.recipeid}`}>Info</Link>
         </button>
         <Toast
@@ -65,29 +65,17 @@ export const ButtonAction = (props: { recipeid: number; recipe: Recipe }) => {
         />
       </div>
     );
-  const addRecipeToDatabase = () => {
+  const addRecipeToDatabase = (e: React.MouseEvent) => {
+    e.stopPropagation();
     addRecipe(props.recipe);
   };
 
-  const saveToLocal = () => {
-    localStorage.setItem("currRecipe", JSON.stringify(props.recipe));
-    router.push(`/recipe/${props.recipeid}`);
-  };
   return (
-    <div className="flex gap-3">
-      <button
-        className=" rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-orange-600 bg-orange-300"
-        onClick={saveToLocal}
-      >
-        Info
-      </button>
-
-      <button
-        className=" rounded-xl w-16 h-9 flex items-center justify-center mt-5 duration-200 select-none hover:scale-[1.15] transition-all hover:bg-green-600 bg-green-400"
-        onClick={addRecipeToDatabase}
-      >
-        Add
-      </button>
-    </div>
+    <button
+      className="mt-5 flex h-9 w-16 select-none items-center justify-center rounded-xl bg-green-400 transition-all duration-200 hover:scale-[1.15] hover:bg-green-600"
+      onClick={addRecipeToDatabase}
+    >
+      Save
+    </button>
   );
 };

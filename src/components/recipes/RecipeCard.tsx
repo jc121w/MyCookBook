@@ -2,17 +2,11 @@
 
 import Link from "next/link";
 import { Recipe } from "@/app/types";
+import { Clock, Flame } from "lucide-react";
+import { extractRecipeId } from "@/lib/utils/recipe";
+import { ButtonAction } from "../ButtonAction";
 
-function extractRecipeId(uri: string): string {
-  // URI format: "http://www.edamam.com/ontologies/edamam.owl#recipe_abc123"
-  return uri.split("#recipe_")[1] ?? uri;
-}
-
-export const RecipeCard = ({
-  recipe,
-}: {
-  recipe: Recipe;
-}) => {
+export const RecipeCard = ({ recipe }: { recipe: Recipe }) => {
   const recipeId = extractRecipeId(recipe.uri);
 
   const handleClick = () => {
@@ -23,28 +17,54 @@ export const RecipeCard = ({
     <Link
       href={`/recipe/${recipeId}`}
       onClick={handleClick}
-      className="card h-72 w-96 bg-base-300 shadow-sm transition-transform duration-200 hover:scale-105"
+      className="group card h-full overflow-hidden bg-base-100 shadow-sm ring-1 ring-base-300 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
     >
-      <figure className="h-32 shrink-0">
-        <img src={recipe.image} alt={recipe.label} className="w-full object-cover" />
+      <figure className="h-44 w-full overflow-hidden">
+        <img
+          src={recipe.image}
+          alt={recipe.label}
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        />
       </figure>
-      <div className="card-body flex-1">
-        <h2 className="card-title text-sm">
+
+      <div className="card-body gap-3 p-5">
+        <h2 className="card-title line-clamp-2 min-h-[3.5rem] text-lg leading-snug">
           {recipe.label}
         </h2>
-        <div className="card-actions flex-wrap gap-1">
-          <div className="badge badge-secondary">
+
+        {/* Key stats — solid, subtle, always aligned to the bottom */}
+        <div className="mt-auto flex flex-wrap items-center gap-2">
+          <span className="badge badge-neutral gap-1">
+            <Flame className="h-3 w-3" />
             {Math.round(recipe.calories)} cal
-          </div>
+          </span>
           {recipe.totalTime > 0 && (
-            <div className="badge badge-outline">{recipe.totalTime} min</div>
+            <span className="badge badge-ghost gap-1">
+              <Clock className="h-3 w-3" />
+              {recipe.totalTime} min
+            </span>
           )}
-          {recipe.cuisineType?.map((c) => (
-            <div key={c} className="badge badge-outline capitalize">
-              {c}
-            </div>
-          ))}
         </div>
+
+        {/* Cuisine tags — quiet, capped so long lists don't overflow */}
+        {recipe.cuisineType && recipe.cuisineType.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {recipe.cuisineType.slice(0, 2).map((c) => (
+              <span
+                key={c}
+                className="badge badge-outline badge-sm capitalize opacity-70"
+              >
+                {c}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div
+        className="absolute right-3 top-3 z-10"
+        onClick={(e) => e.preventDefault()}
+      >
+        <ButtonAction recipe={recipe} recipeid={recipeId} />
       </div>
     </Link>
   );

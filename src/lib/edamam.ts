@@ -16,8 +16,5 @@ export async function fetchRecipe(query: string, filters?: RecipeFilters) {
     },
   });
 
-  // Log the entire response
-  console.log("Full data:", data);
-
   return data;
 }

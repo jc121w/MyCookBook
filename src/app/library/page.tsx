@@ -4,16 +4,18 @@ import React, { useEffect } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { RecipeSimplified } from "../types";
-import { LibRecipeCard } from "@/components/recipes/LibRecipeCard";
 import { RecipeForm } from "@/components/form/RecipeForm";
+import { Recipe as DbRecipe } from "@prisma/client";
+import { RecipeCard } from "@/components/recipes/RecipeCard";
+import { Recipe } from "../types";
+
 const Library = () => {
   // fetch all recips
   const {
     data: recipes,
     isLoading: isLoadingRecipes,
     error: recipesError,
-  } = useQuery<RecipeSimplified[]>({
+  } = useQuery<DbRecipe[]>({
     queryKey: ["recipes"],
     queryFn: async () => {
       const response = await axios.get("/api");
@@ -62,14 +64,7 @@ const Library = () => {
 
       <div className="mt-10 grid h-fit w-full items-center justify-center gap-7 md:grid-cols-2 lg:grid-cols-3">
         {recipes?.map((elem, index) => (
-          <LibRecipeCard
-            title={elem.title}
-            src={elem.image}
-            cal={String(elem.nutrients[0].amount)}
-            key={index}
-            id={elem.id}
-            recipeDetails={elem}
-          />
+          <RecipeCard key={index} recipe={elem.raw as unknown as Recipe} />
         ))}
       </div>
     </div>

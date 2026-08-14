@@ -77,21 +77,6 @@ export interface SavedStep {
   recipeId: number;
 }
 
-export interface RecipeSimplified {
-  id: number;
-  title: string;
-  image: string;
-  cheap: boolean;
-  readyInMinutes: number;
-  servings: number;
-  summary: string;
-  nutrients: SavedNutrient[];
-  ingredients: SavedIngredient[];
-  steps: SavedStep[];
-  createdAt?: string;
-  updatedAt?: string;
-}
-
 export interface EdamamSearchResponse {
   from: number;
   to: number;
