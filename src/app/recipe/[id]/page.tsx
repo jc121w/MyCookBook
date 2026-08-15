@@ -7,6 +7,7 @@ import { BackButton } from "@/components/BackButton";
 import { Recipe } from "@/app/types";
 import { ExternalLink } from "lucide-react";
 import axios from "axios";
+import RedirectMessage from "@/components/form/RedirectMessage";
 
 async function fetchRecipeById(id: string): Promise<Recipe> {
   // Try localStorage first (set when clicking a RecipeCard)
@@ -44,11 +45,7 @@ export default function RecipeDetailPage() {
   }
 
   if (error || !recipe) {
-    return (
-      <div className="mt-10 text-center text-3xl font-semibold text-red-600">
-        Error loading recipe
-      </div>
-    );
+    <RedirectMessage {...error} />;
   }
 
   return (
@@ -58,7 +55,7 @@ export default function RecipeDetailPage() {
       {/* Header */}
       <div className="mt-6 flex flex-col items-start gap-8 xl:flex-row">
         <div className="shrink-0">
-          <h1 className="text-pretty py-5 text-2xl font-bold">
+          <h1 className="py-5 text-2xl font-bold text-pretty">
             {recipe.label}
           </h1>
           <Image
@@ -138,7 +135,7 @@ export default function RecipeDetailPage() {
       <h2 className="py-5 text-2xl font-semibold">Ingredients</h2>
       <ul className="flex flex-col gap-2">
         {recipe.ingredientLines.map((line, i) => (
-          <li key={i} className="rounded-lg border bg-base-200 p-3">
+          <li key={i} className="bg-base-200 rounded-lg border p-3">
             {line}
           </li>
         ))}
@@ -165,7 +162,7 @@ export default function RecipeDetailPage() {
       <h2 className="py-5 text-2xl font-semibold">Nutrition Facts</h2>
       <div className="mb-10 grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">
         {Object.entries(recipe.totalNutrients).map(([key, nutrient]) => (
-          <div key={key} className="rounded-lg border bg-base-200 p-2 text-sm">
+          <div key={key} className="bg-base-200 rounded-lg border p-2 text-sm">
             <span className="font-medium">{nutrient.label}</span>
             <br />
             {Math.round(nutrient.quantity)} {nutrient.unit}

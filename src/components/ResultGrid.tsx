@@ -1,6 +1,7 @@
 import { EdamamSearchResponse } from "@/app/types";
 import { RecipeCardSkeleton } from "./recipes/RecipeCardSkeleton";
 import { RecipeCard } from "./recipes/RecipeCard";
+import { grid } from "@/lib/utils/recipe";
 
 export const ResultsGrid = ({
   isLoading,
@@ -13,9 +14,6 @@ export const ResultsGrid = ({
   hasQuery: boolean;
   hits?: EdamamSearchResponse["hits"];
 }) => {
-  const grid =
-    "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
-
   // Before the user has searched — invite, don't show emptiness
   if (!hasQuery) {
     return (

@@ -1,12 +1,25 @@
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
 import { extractRecipeId } from "@/lib/utils/recipe";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
 export async function GET() {
   try {
-    const recipes = await prisma.recipe.findMany();
-    console.log("in the route", recipes);
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session)
+      return NextResponse.json(
+        { message: "Could Not Retrieve User Session" },
+        { status: 401 },
+      );
+    const userId = session.user.id;
+
+    const recipes = await prisma.recipe.findMany({
+      where: {
+        userId: userId,
+      },
+    });
     return NextResponse.json(recipes, { status: 200 });
   } catch (error) {
     return NextResponse.json(
@@ -18,8 +31,15 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session)
+      return NextResponse.json(
+        { message: "Could Not Retrieve User Session" },
+        { status: 401 },
+      );
     const body = await req.json();
-    const id = extractRecipeId(body.uri);
+    const edamamId = extractRecipeId(body.uri);
+    const userId = session.user.id;
     const recipeData = {
       label: body.label,
       image: body.image,
@@ -38,10 +58,11 @@ export async function POST(req: Request) {
       raw: body,
     }; // Json — store the}
     const saved = await prisma.recipe.upsert({
-      where: { id },
+      where: { userId_edamamId: { userId, edamamId } },
       update: recipeData,
       create: {
-        id,
+        userId,
+        edamamId,
         ...recipeData,
       },
     });

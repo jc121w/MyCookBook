@@ -8,6 +8,10 @@ import { RecipeForm } from "@/components/form/RecipeForm";
 import { Recipe as DbRecipe } from "@prisma/client";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { Recipe } from "../types";
+import { RecipeCardSkeleton } from "@/components/recipes/RecipeCardSkeleton";
+import { grid } from "@/lib/utils/recipe";
+import Link from "next/link";
+import RedirectMessage from "@/components/form/RedirectMessage";
 
 const Library = () => {
   // fetch all recips
@@ -25,20 +29,23 @@ const Library = () => {
   });
 
   if (isLoadingRecipes) {
-    console.log(recipes);
-
     return (
-      <div className="mt-10 text-center text-3xl font-semibold">Loading...</div>
+      <div className={grid}>
+        {Array.from({ length: 8 }).map((_, i) => (
+          <RecipeCardSkeleton key={i} />
+        ))}
+      </div>
     );
   }
-  if (recipesError) return <div>Error loading recipes</div>;
-
+  if (recipesError) {
+    <RedirectMessage {...recipesError} />;
+  }
   return (
     <div className="m-auto flex max-w-4xl flex-col items-start justify-start gap-10">
       <div className="flex w-3/5 justify-between">
         <BackButton />
         <button
-          className="mt-5 flex h-12 w-24 select-none items-center justify-center rounded-xl border transition-all duration-200 hover:scale-[1.15] hover:bg-slate-200"
+          className="mt-5 flex h-12 w-24 items-center justify-center rounded-xl border transition-all duration-200 select-none hover:scale-[1.15] hover:bg-slate-200"
           onClick={() => {
             const dialog = document.getElementById(
               "my_modal_1",

@@ -1,16 +1,24 @@
+import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ edamamId: string }> },
 ) {
   try {
-    const { id } = await params;
-
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session)
+      return NextResponse.json(
+        { message: "Could Not Retrieve User Session" },
+        { status: 401 },
+      );
+    const { edamamId } = await params;
+    const userId = session.user.id;
     const recipe = await prisma.recipe.findUnique({
       where: {
-        id,
+        userId_edamamId: { userId, edamamId },
       },
     });
 
