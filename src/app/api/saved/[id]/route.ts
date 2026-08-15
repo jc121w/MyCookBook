@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ edamamId: string }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -14,11 +14,11 @@ export async function GET(
         { message: "Could Not Retrieve User Session" },
         { status: 401 },
       );
-    const { edamamId } = await params;
+    const { id } = await params;
     const userId = session.user.id;
     const recipe = await prisma.recipe.findUnique({
       where: {
-        userId_edamamId: { userId, edamamId },
+        userId_edamamId: { userId, edamamId: id },
       },
     });
 
