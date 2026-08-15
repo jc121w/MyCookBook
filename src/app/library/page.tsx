@@ -38,7 +38,7 @@ const Library = () => {
     );
   }
   if (recipesError) {
-    <RedirectMessage {...recipesError} />;
+    <RedirectMessage error={recipesError} />;
   }
   return (
     <div className="m-auto flex max-w-4xl flex-col items-start justify-start gap-10">

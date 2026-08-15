@@ -45,7 +45,7 @@ export default function RecipeDetailPage() {
   }
 
   if (error || !recipe) {
-    <RedirectMessage {...error} />;
+    return <RedirectMessage error={error} />;
   }
 
   return (

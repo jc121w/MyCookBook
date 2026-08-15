@@ -1,7 +1,7 @@
 import axios from "axios";
 import Link from "next/link";
 
-const RedirectMessage = (error: Error) => {
+const RedirectMessage = ({ error }: { error: Error | null }) => {
   const status = axios.isAxiosError(error) ? error.response?.status : undefined;
 
   if (status === 401) {
