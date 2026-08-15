@@ -1,11 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 @plugin "daisyui" {
   themes:
     caramellatte --default,
-    dim --prefersdark;
+    coffee --prefersdark;
 }
+@plugin "@tailwindcss/typography";
 html {
   transition:
     background-color 0.3s ease,

@@ -27,9 +27,9 @@ export default function RecipesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-base-200">
+    <main className="bg-base-200 min-h-screen">
       {/* Header — gives the page an anchor */}
-      <section className="border-b border-base-300 bg-base-100">
+      <section className="bg-base-100">
         <div className="mx-auto max-w-6xl px-4 py-10 text-center">
           <h1 className="text-4xl font-bold tracking-tight">Find a recipe</h1>
           <p className="text-base-content/60 mt-2">
@@ -44,7 +44,7 @@ export default function RecipesPage() {
             <label className="input-bordered input flex flex-1 items-center gap-2">
               <Search className="h-4 w-4 opacity-60" />
               <input
-                type="search"
+                type="text"
                 name="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
