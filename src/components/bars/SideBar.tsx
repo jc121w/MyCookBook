@@ -13,7 +13,7 @@ export default function SideBar({ session, drawerId, links }: SidebarProps) {
         aria-label="close sidebar"
         className="drawer-overlay"
       ></label>
-      <div className="flex min-h-full flex-col bg-base-200 p-2 is-drawer-close:w-14 is-drawer-open:w-64">
+      <div className="bg-base-200 is-drawer-close:w-14 is-drawer-open:w-64 flex min-h-full flex-col p-2">
         <ul className="menu min-h-full grow gap-3">
           <div className="flex items-start">
             <li>
@@ -31,8 +31,8 @@ export default function SideBar({ session, drawerId, links }: SidebarProps) {
                 htmlFor="profile-drawer"
                 className="flex cursor-pointer justify-end"
               >
-                <ChevronsLeft className="hidden is-drawer-open:block" />
-                <ChevronsRight className="block is-drawer-open:hidden" />
+                <ChevronsLeft className="is-drawer-open:block hidden" />
+                <ChevronsRight className="is-drawer-open:hidden block" />
               </label>
             </li>
           </div>
@@ -70,3 +70,7 @@ export default function SideBar({ session, drawerId, links }: SidebarProps) {
     </div>
   );
 }
+/*
+
+
+*/

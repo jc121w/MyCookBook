@@ -1,24 +1,64 @@
-import { NotebookText, User, UtensilsCrossed } from "lucide-react";
+import { Menu, NotebookText } from "lucide-react";
 import Link from "next/link";
-import { SignOutButton } from "../buttons/SignOutButton";
 import { auth } from "@/lib/auth";
 import ThemeSwitcher from "../ThemeSwitcher";
+import ProfileDropdown from "./ProfileDropdown";
+import { sideBarLinks } from "@/constants/navigation";
 
 type Session = typeof auth.$Infer.Session;
-export const Navbar = async ({ session }: { session: Session | null }) => {
-  console.log(session);
+
+// links defined once, rendered wherever needed
+function NavLinks() {
   return (
-    <div className="navbar max-h-8 border-b bg-base-100 p-6 px-8 md:px-20">
-      <div className="navbar-start"></div>
-      <div className="navbar-center">
-        {" "}
-        <Link href="/" className="btn btn-ghost text-xl" prefetch={false}>
-          <NotebookText className="ml-4 h-8 w-8" />
+    <>
+      {sideBarLinks.map(({ href, label, icon: Icon }) => (
+        <li key={href}>
+          <Link href={href}>
+            {Icon && <Icon size={16} />}
+            {label}
+          </Link>
+        </li>
+      ))}
+    </>
+  );
+}
+
+export const Navbar = async ({ session }: { session: Session | null }) => {
+  return (
+    <div className="navbar bg-base-100 border-b px-4 md:px-20">
+      {/* LEFT: hamburger (mobile only) + logo */}
+      <div className="navbar-start">
+        <div className="dropdown">
+          <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
+            <Menu className="h-5 w-5" />
+          </div>
+          <ul
+            tabIndex={0}
+            className="menu menu-sm dropdown-content rounded-box bg-base-100 z-1 mt-3 w-52 gap-1 p-2 shadow lg:hidden"
+          >
+            <NavLinks />
+          </ul>
+        </div>
+        <Link
+          href="/"
+          className="btn btn-ghost text-lg sm:text-xl"
+          prefetch={false}
+        >
+          <NotebookText className="h-6 w-6 sm:h-8 sm:w-8" />
           MyCookBook
         </Link>
       </div>
-      <div className="navbar-end">
+
+      {/* CENTER: inline links (desktop only) */}
+      <div className="navbar-center hidden lg:flex">
+        <ul className="menu menu-horizontal gap-1 px-1">
+          <NavLinks />
+        </ul>
+      </div>
+
+      <div className="navbar-end gap-5">
         <ThemeSwitcher />
+        <ProfileDropdown session={session} />
       </div>
     </div>
   );

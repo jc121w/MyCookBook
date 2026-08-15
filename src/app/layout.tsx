@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import Providers from "@/components/providers/Providers";
 import SideBar from "@/components/bars/SideBar";
 import { sideBarLinks } from "@/constants/navigation";
+import Footer from "@/components/bars/Footer";
 const roboto_mono = Roboto_Mono({
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700"],
@@ -40,13 +41,7 @@ export default async function RootLayout({
                 {children}
               </main>
             </div>
-
-            <SideBar
-              drawerId="profile-drawer"
-              links={sideBarLinks}
-              session={session}
-            />
-          </div>
+          </div>{" "}
         </Providers>
       </body>
     </html>
