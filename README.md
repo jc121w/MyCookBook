@@ -2,22 +2,13 @@
 
 > A full-stack web app for building recipes and designing weekly meal plans.
 
-<!-- Replace the tagline with your own one-liner: exactly what the app does, in one sentence. -->
-
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 ---
 
 ## 📖 Overview
 
-A 2–4 sentence description. What problem does it solve, and for whom?
-intro to cooking, knife advice, cheap nutricious, an app that helps teach you the cooking fundamentals and and how to create a healthy and sustainable meal plan and recipe repetoir to fit your nnutritional goals, beginner friendly
-
-Example: "Home cooks juggle scattered recipes and struggle to plan balanced
-weeks of meals. [Project Name] lets users build a personal recipe library, then
-drag those recipes into a weekly planner that auto-generates a shopping list."
-
-Lead with the *why* — it's what makes a reader care.
+Home cooks juggle scattered recipes and struggle to plan balanced weeks of meals. Those getting into cooking may find the high range of options, prices, and complexities daunting. MyCookBooks makes it easy for users to find and create their own recipes that help them meet their fitness and nutritional goals. This app's focus is to simplify the cooking and recipe finding process to equip its users with a consistent and curated meal plan to stay healthy. Built for those wanting to cook more, MyCookBook teaches cooking fundamentals along with its price and nutrient focused recipe tools. 
 
 ## ✨ Features
 
@@ -26,7 +17,6 @@ Lead with the *why* — it's what makes a reader care.
 - 🛒 **Auto shopping list** — generated from the ingredients in your plan
 - 🔍 **Search & filters** — filter by tag, prep time, dietary needs
 - 👤 **Accounts & auth** — sign up / log in to save personal recipes and plans
-- <!-- Add / trim to match what you've actually built -->
 
 ## 🖼️ Demo & Screenshots
 
