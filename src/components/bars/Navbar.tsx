@@ -8,7 +8,9 @@ import { sideBarLinks } from "@/constants/navigation";
 type Session = typeof auth.$Infer.Session;
 
 // links defined once, rendered wherever needed
-function NavLinks() {
+function NavLinks({ session }: { session: Session | null }) {
+  if (!session) return null;
+
   return (
     <>
       {sideBarLinks.map(({ href, label, icon: Icon }) => (
@@ -36,7 +38,7 @@ export const Navbar = async ({ session }: { session: Session | null }) => {
             tabIndex={0}
             className="menu menu-sm dropdown-content rounded-box bg-base-100 z-1 mt-3 w-52 gap-1 p-2 shadow lg:hidden"
           >
-            <NavLinks />
+            <NavLinks session={session} />
           </ul>
         </div>
         <Link
@@ -52,7 +54,7 @@ export const Navbar = async ({ session }: { session: Session | null }) => {
       {/* CENTER: inline links (desktop only) */}
       <div className="navbar-center hidden lg:flex">
         <ul className="menu menu-horizontal gap-1 px-1">
-          <NavLinks />
+          <NavLinks session={session} />
         </ul>
       </div>
 

@@ -30,18 +30,10 @@ export default async function RootLayout({
       <body className={roboto_mono.className}>
         <Providers>
           <Navbar session={session} />
-          <div className="drawer lg:drawer-open mx-auto h-full">
-            <input
-              id="profile-drawer"
-              type="checkbox"
-              className="drawer-toggle"
-            />
-            <div className="drawer-content">
-              <main className="max-w-7xl p-6 px-8 md:px-20 2xl:max-w-screen-2xl">
-                {children}
-              </main>
-            </div>
-          </div>{" "}
+
+          <main className="mx-auto max-w-7xl p-6 px-8 md:px-20 2xl:max-w-[1536px]">
+            {children}
+          </main>
         </Providers>
       </body>
     </html>

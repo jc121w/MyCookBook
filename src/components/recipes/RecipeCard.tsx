@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Recipe } from "@/app/types";
 import { Clock, Flame } from "lucide-react";
 import { extractRecipeId } from "@/lib/utils/recipe";
-import { ButtonAction } from "../ButtonAction";
+import { SaveButton } from "../SaveButton";
 
 export const RecipeCard = ({ recipe }: { recipe: Recipe }) => {
   const recipeId = extractRecipeId(recipe.uri);
@@ -14,11 +14,7 @@ export const RecipeCard = ({ recipe }: { recipe: Recipe }) => {
   };
 
   return (
-    <Link
-      href={`/recipe/${recipeId}`}
-      onClick={handleClick}
-      className="group card h-full overflow-hidden bg-base-100 shadow-sm ring-1 ring-base-300 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl"
-    >
+    <div className="group card bg-base-100 ring-base-300 h-full overflow-hidden shadow-sm ring-1 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
       <figure className="h-44 w-full overflow-hidden">
         <img
           src={recipe.image}
@@ -60,12 +56,18 @@ export const RecipeCard = ({ recipe }: { recipe: Recipe }) => {
           </div>
         )}
       </div>
+      <Link
+        href={`/recipe/${recipeId}`}
+        onClick={handleClick}
+        aria-label={recipe.label}
+        className="absolute inset-0 z-0"
+      />
       <div
-        className="absolute right-3 top-3 z-10"
+        className="absolute top-3 right-3 z-10"
         onClick={(e) => e.preventDefault()}
       >
-        <ButtonAction recipe={recipe} recipeid={recipeId} />
+        <SaveButton recipe={recipe} recipeid={recipeId} />
       </div>
-    </Link>
+    </div>
   );
 };
