@@ -30,17 +30,19 @@ export const Navbar = async ({ session }: { session: Session | null }) => {
     <div className="navbar bg-base-100 border-b px-4 md:px-20">
       {/* LEFT: hamburger (mobile only) + logo */}
       <div className="navbar-start">
-        <div className="dropdown">
-          <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-            <Menu className="h-5 w-5" />
+        {session && (
+          <div className="dropdown">
+            <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
+              <Menu className="h-5 w-5" />
+            </div>
+            <ul
+              tabIndex={0}
+              className="menu menu-sm dropdown-content rounded-box bg-base-100 z-1 mt-3 w-52 gap-1 p-2 shadow lg:hidden"
+            >
+              <NavLinks session={session} />
+            </ul>
           </div>
-          <ul
-            tabIndex={0}
-            className="menu menu-sm dropdown-content rounded-box bg-base-100 z-1 mt-3 w-52 gap-1 p-2 shadow lg:hidden"
-          >
-            <NavLinks session={session} />
-          </ul>
-        </div>
+        )}
         <Link
           href="/"
           className="btn btn-ghost text-lg sm:text-xl"

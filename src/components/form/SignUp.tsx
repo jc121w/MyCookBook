@@ -27,7 +27,6 @@ const SignUp = () => {
   } = useForm<FormInputPost>();
 
   const submit: SubmitHandler<FormInputPost> = async (data) => {
-    console.log(data);
     addUser(data);
   };
 
