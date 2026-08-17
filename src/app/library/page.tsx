@@ -14,6 +14,16 @@ import Link from "next/link";
 import RedirectMessage from "@/components/form/RedirectMessage";
 
 const Library = () => {
+  // Recipe Form Type
+
+  type RecipeFormValues = {
+    label: string;
+    yield: string;
+    ingredientLines: { value: string }[];
+    time: Number;
+    cuisine: String;
+    mealType: String;
+  };
   // fetch all recips
   const {
     data: recipes,
@@ -45,24 +55,26 @@ const Library = () => {
       <div className="flex w-3/5 justify-between">
         <BackButton />
         <button
-          className="mt-5 flex h-12 w-24 items-center justify-center rounded-xl border transition-all duration-200 select-none hover:scale-[1.15] hover:bg-slate-200"
-          onClick={() => {
-            const dialog = document.getElementById(
-              "my_modal_1",
-            ) as HTMLDialogElement;
-            dialog.showModal();
-          }}
+          className="btn"
+          onClick={() => document.getElementById("recipe_modal").showModal()}
         >
           Create
         </button>
-
-        <dialog id="my_modal_1" className="modal">
+        <dialog
+          id="recipe_modal"
+          className="modal modal-bottom sm:modal-middle"
+        >
           <div className="modal-box">
-            <h3 className="text-lg font-bold">Add Recipe</h3>
-            <RecipeForm />
-            <div className="modal-action">
-              <form method="dialog">
+            <h3 className="text-lg font-bold">Create Recipe</h3>
+            <p className="py-4">
+              Press ESC key or click the button below to close
+            </p>
+            <div className="modal-action flex">
+              <form method="dialog" className="flex-1">
                 <button className="btn">Close</button>
+              </form>{" "}
+              <form onSubmit={() => {}} className="flex-1">
+                <button className="btn">Create</button>
               </form>
             </div>
           </div>

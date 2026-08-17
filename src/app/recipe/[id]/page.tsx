@@ -16,6 +16,11 @@ async function fetchRecipeById(id: string): Promise<Recipe> {
     return JSON.parse(cached);
   }
 
+  // Try PostgreSQL Database
+  const saved = await axios.get(`/api/saved/${id}`);
+  if (saved) {
+  }
+
   // Fallback: fetch from Edamam via our API route
   const { data } = await axios.get(`/api/recipes/${id}`);
   return data.recipe;
