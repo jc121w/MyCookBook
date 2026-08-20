@@ -12,7 +12,7 @@ export const RecipeCard = ({ recipe }: { recipe: Recipe }) => {
   const handleClick = () => {
     localStorage.setItem(`recipe_${recipeId}`, JSON.stringify(recipe));
   };
-
+  console.log(recipe.image);
   return (
     <div className="group card bg-base-100 ring-base-300 h-full overflow-hidden shadow-sm ring-1 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
       <figure className="h-44 w-full overflow-hidden">
