@@ -29,11 +29,11 @@ export default function ProfileDropdown({
         role="button"
         className="btn btn-ghost btn-circle avatar"
       >
-        <div className="w-10 rounded-full">
+        <div className="w-10 items-center rounded-full">
           {image ? (
             <img alt={name} src={image} />
           ) : (
-            <CircleUser className="h-10 w-10" />
+            <CircleUser className="flex h-full w-full items-center" />
           )}
         </div>
       </div>

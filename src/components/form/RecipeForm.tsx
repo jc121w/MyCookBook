@@ -54,7 +54,16 @@ export default function RecipeForm() {
 
   return (
     <div className="modal-box">
-      {" "}
+      {/* Close button — its own form so it never submits the recipe form */}
+      <form method="dialog">
+        <button
+          type="submit"
+          aria-label="Close"
+          className="btn btn-sm btn-circle btn-ghost absolute top-2 right-2"
+        >
+          ✕
+        </button>
+      </form>
       <form
         onSubmit={handleSubmit(onSubmit)}
         method="dialog"
@@ -111,7 +120,7 @@ export default function RecipeForm() {
         </div>
 
         {/* Ingredients (dynamic list) */}
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <label className="text-base-content font-medium">Ingredients</label>
           {fields.map((field, index) => (
             <div key={field.id} className="flex gap-2">

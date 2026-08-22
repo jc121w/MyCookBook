@@ -55,13 +55,14 @@ export default async function ProfilePage() {
           <h3 className="font-semibold">My Library</h3>
           <p className="text-sm opacity-70">View your saved recipes</p>
         </Link>
-        <div className="card bg-base-200 p-6">
+        <Link
+          href="/settings"
+          className="card bg-base-200 hover:bg-base-300 p-6 transition"
+        >
           <Settings className="text-primary mb-2" />
-          <h3 className="font-semibold">Account</h3>
-          <div className="mt-3">
-            <SignOutButton />
-          </div>
-        </div>
+          <h3 className="font-semibold">Settings</h3>{" "}
+          <p className="text-sm opacity-70">View your settings</p>
+        </Link>
       </div>
     </div>
   );

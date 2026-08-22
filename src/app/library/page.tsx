@@ -52,6 +52,10 @@ const Library = () => {
         </button>
         <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
           <RecipeForm />
+          {/* Click-outside-to-close: must be a direct child of .modal */}
+          <form method="dialog" className="modal-backdrop">
+            <button>close</button>
+          </form>
         </dialog>
       </div>
 

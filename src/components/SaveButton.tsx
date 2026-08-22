@@ -7,11 +7,6 @@ import { useRouter } from "next/navigation";
 import { AlertCircle, Bookmark, BookmarkCheck } from "lucide-react";
 
 export const SaveButton = (props: { recipeid: String; recipe: Recipe }) => {
-  const router = useRouter();
-  const [success, setSuccess] = useState(false);
-  const flip = () => {
-    setSuccess(!success);
-  };
   const {
     mutate: addRecipe,
     isPending,

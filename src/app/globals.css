@@ -5,7 +5,10 @@
     coffee --prefersdark;
 }
 @plugin "@tailwindcss/typography";
-html {
+/* Theme fade lives on <body>, not <html>: daisyUI drives the root element's
+   own background/transition while a modal is open (see base/rootscrollgutter.css).
+   Overriding :root there desyncs its gradient from its color on modal close. */
+body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
