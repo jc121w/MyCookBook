@@ -79,23 +79,23 @@ model Verification {
 
 model Recipe {
   id              Int    @id @default(autoincrement())
-  edamamId        String
+  edamamId        String?
   userId          String   
   user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   label           String
-  image           String
+  image           String?
   source          String
   yield           Int
-  url             String
-  calories        Float
-  dietLabels      String[]
-  healthLabels    String[]
-  ingredientLines String[]
-  dishType        String[]
-  cuisineType     String[]
-  mealType        String[]
+  url             String?
+  calories        Float?
+  dietLabels      String[] @default([])
+  healthLabels    String[] @default([])
+  ingredientLines String[] @default([])
+  dishType        String[] @default([])
+  cuisineType     String[] @default([])
+  mealType        String[] @default([])
   totalTime       Int
-  totalNutrients  Json
+  totalNutrients  Json?
   raw             Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

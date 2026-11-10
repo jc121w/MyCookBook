@@ -38,8 +38,10 @@ export async function POST(req: Request) {
         { status: 401 },
       );
     const body = await req.json();
+    console.log(body);
     const edamamId = extractRecipeId(body.uri);
     const userId = session.user.id;
+    console.log(body);
     const recipeData = {
       label: body.label,
       image: body.image,

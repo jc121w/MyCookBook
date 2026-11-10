@@ -39,7 +39,8 @@ export default function RecipeForm() {
     isPending,
     isError,
   } = useMutation({
-    mutationFn: (data: RecipePayload) => axios.post("/api", data),
+    mutationFn: (data: RecipePayload) =>
+      axios.post("/api/recipes/custom", data),
     onError: (error) => console.error("Error adding recipe:", error),
     onSuccess: () => console.log("Recipe added successfully"),
   });
@@ -59,7 +60,7 @@ export default function RecipeForm() {
         <button
           type="submit"
           aria-label="Close"
-          className="btn btn-sm btn-circle btn-ghost absolute top-2 right-2"
+          className="btn btn-sm btn-circle btn-ghost absolute top-2 right-2 text-xl"
         >
           ✕
         </button>

@@ -1,7 +1,8 @@
 import { EdamamSearchResponse } from "@/app/types";
 import { RecipeCardSkeleton } from "./recipes/RecipeCardSkeleton";
 import { RecipeCard } from "./recipes/RecipeCard";
-import { grid } from "@/lib/utils/recipe";
+import { extractRecipeId, grid } from "@/lib/utils/recipe";
+import { SaveButton } from "./SaveButton";
 
 export const ResultsGrid = ({
   isLoading,
@@ -52,9 +53,20 @@ export const ResultsGrid = ({
 
   return (
     <div className={grid}>
-      {hits.map((hit) => (
-        <RecipeCard key={hit.recipe.uri} recipe={hit.recipe} />
-      ))}
+      {hits.map((hit) => {
+        const id = extractRecipeId(hit.recipe.uri);
+        return (
+          <RecipeCard
+            key={id}
+            recipe={hit.recipe}
+            href={`/recipe/${id}`}
+            onClick={() =>
+              localStorage.setItem(`recipe_${id}`, JSON.stringify(hit.recipe))
+            }
+            action={<SaveButton recipeid={id} recipe={hit.recipe} />}
+          />
+        );
+      })}
     </div>
   );
 };

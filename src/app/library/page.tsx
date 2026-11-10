@@ -45,8 +45,7 @@ const Library = () => {
   }
   return (
     <div className="m-auto flex max-w-4xl flex-col items-start justify-start gap-10">
-      <div className="flex w-3/5 justify-between">
-        <BackButton />
+      <div className="mx-auto max-w-6xl px-4 py-10">
         <button className="btn" onClick={() => modalRef.current?.showModal()}>
           Create
         </button>
@@ -59,9 +58,16 @@ const Library = () => {
         </dialog>
       </div>
 
-      <div className="mt-10 grid h-fit w-full items-center justify-center gap-7 md:grid-cols-2 lg:grid-cols-3">
+      <div className={`mt-10 ${grid}`}>
         {recipes?.map((elem, index) => (
-          <RecipeCard key={index} recipe={elem.raw as unknown as Recipe} />
+          <RecipeCard
+            key={elem.id}
+            recipe={elem}
+            href={`/recipe/${elem.id}`}
+            onClick={() =>
+              localStorage.setItem(`recipe_${elem.id}`, JSON.stringify(elem))
+            }
+          />
         ))}
       </div>
     </div>
