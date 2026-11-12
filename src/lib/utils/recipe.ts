@@ -6,14 +6,23 @@ export function extractRecipeId(uri: string): string {
 export const grid =
   "grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
 
-export function perServing(recipe: Recipe, key: string): number {
-  const total = recipe.totalNutrients[key]?.quantity ?? 0;
+export function perServing(
+  recipe: {
+    totalNutrients: Recipe["totalNutrients"] | null;
+    yield: number;
+  },
+  key: string,
+) {
+  const total = recipe.totalNutrients?.[key]?.quantity ?? 0;
   return Math.round(total / recipe.yield);
 }
 
 // The "% Daily Value"
 // that makes a nutrition panel actually meaningful. Same per-serving divide:
-export function perServingDV(recipe: Recipe, key: string): number {
-  const total = recipe.totalDaily[key]?.quantity ?? 0;
+export function perServingDV(
+  recipe: { totalDaily: Recipe["totalDaily"] | null; yield: number },
+  key: string,
+): number {
+  const total = recipe.totalDaily?.[key]?.quantity ?? 0;
   return Math.round(total / recipe.yield);
 }

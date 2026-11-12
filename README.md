@@ -8,7 +8,10 @@
 
 ## 📖 Overview
 
-Home cooks juggle scattered recipes and struggle to plan balanced weeks of meals. Those getting into cooking may find the high range of options, prices, and complexities daunting. MyCookBooks makes it easy for users to find and create their own recipes that help them meet their fitness and nutritional goals. This app's focus is to simplify the cooking and recipe finding process to equip its users with a consistent and curated meal plan to stay healthy. Built for those wanting to cook more, MyCookBook teaches cooking fundamentals along with its price and nutrient focused recipe tools. 
+Recipe journal for people to record the food that they eat and make
+Goal is a nice and organized way for people to journal their cooking help them improve and see the recipes they make
+Each recipe comes with a set of journal entries about that days attempt at cooking it problems good bad...
+Mission is to encourage people to get into cooking and view the recipes they make and grow
 
 ## ✨ Features
 
@@ -29,15 +32,15 @@ Home cooks juggle scattered recipes and struggle to plan balanced weeks of meals
 
 ## 🛠️ Tech Stack
 
-| Layer      | Technology                    |
-| ---------- | ----------------------------- |
-| Framework  | Next.js (App Router)          |
-| Language   | TypeScript                    |
-| ORM        | Prisma                        |
-| Database   | PostgreSQL                    |
-| Auth       | Better Auth                   |
-| Styling    | e.g. Tailwind CSS             |
-| Hosting    | e.g. Vercel                   |
+| Layer     | Technology           |
+| --------- | -------------------- |
+| Framework | Next.js (App Router) |
+| Language  | TypeScript           |
+| ORM       | Prisma               |
+| Database  | PostgreSQL           |
+| Auth      | Better Auth          |
+| Styling   | e.g. Tailwind CSS    |
+| Hosting   | e.g. Vercel          |
 
 <!-- Next.js is full-stack: pages AND API/server logic live in one app.
      There is no separate backend server — Prisma + Better Auth run inside it. -->
@@ -129,11 +132,11 @@ project-name/
 
 <!-- Optional. A short table of the main API routes under app/api. -->
 
-| Method | Endpoint         | Description       |
-| ------ | ---------------- | ----------------- |
-| GET    | `/api/recipes`   | List all recipes  |
-| POST   | `/api/recipes`   | Create a recipe   |
-| GET    | `/api/plans/:id` | Get a meal plan   |
+| Method | Endpoint         | Description      |
+| ------ | ---------------- | ---------------- |
+| GET    | `/api/recipes`   | List all recipes |
+| POST   | `/api/recipes`   | Create a recipe  |
+| GET    | `/api/plans/:id` | Get a meal plan  |
 
 ## 🗺️ Roadmap
 

@@ -15,10 +15,16 @@ export async function GET(
         { status: 401 },
       );
     const { id } = await params;
+    // 1. The URL id is always a string ("7"), but the DB id is a number
+    const recipeId = Number(id);
+    if (Number.isNaN(recipeId)) {
+      return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+    }
     const userId = session.user.id;
-    const recipe = await prisma.recipe.findUnique({
+    const recipe = await prisma.recipe.findFirst({
       where: {
-        userId_edamamId: { userId, edamamId: id },
+        id: recipeId,
+        userId,
       },
     });
 
