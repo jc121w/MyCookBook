@@ -2,6 +2,7 @@
 
 import { Recipe } from "@/app/types";
 import { RecipeDetail } from "@/components/recipes/RecipeDetail";
+import { RecipeDetailSkeleton } from "@/components/recipes/RecipeDetailSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useParams } from "next/navigation";
@@ -11,11 +12,6 @@ async function fetchRecipeById(id: string): Promise<Recipe> {
   const cached = localStorage.getItem(`recipe_${id}`);
   if (cached) {
     return JSON.parse(cached);
-  }
-
-  // Try PostgreSQL Database
-  const saved = await axios.get(`/api/saved/${id}`);
-  if (saved) {
   }
 
   // Fallback: fetch from Edamam via our API route
@@ -34,7 +30,7 @@ export default function RecipeDetailPage() {
     enabled: !!id,
   });
 
-  // if (isLoading) return <DetailSkeleton />;
+  if (isLoading) return <RecipeDetailSkeleton />;
   if (error || !recipe)
     return (
       <div className="mx-auto max-w-4xl px-4">
@@ -47,5 +43,5 @@ export default function RecipeDetailPage() {
   const heroImage =
     recipe.images?.REGULAR?.url ?? recipe.images?.LARGE?.url ?? recipe.image;
 
-  return <RecipeDetail recipe={recipe} />;
+  return <RecipeDetail recipe={{ ...recipe, image: heroImage }} />;
 }

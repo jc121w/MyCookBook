@@ -24,7 +24,6 @@ export default function RecipeForm() {
   } = useForm<RecipeFormValues>({
     defaultValues: {
       yield: 1,
-      totalTime: 0,
       ingredientLines: [{ value: "" }],
     },
   });

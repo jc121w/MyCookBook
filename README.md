@@ -13,6 +13,14 @@ Goal is a nice and organized way for people to journal their cooking help them i
 Each recipe comes with a set of journal entries about that days attempt at cooking it problems good bad...
 Mission is to encourage people to get into cooking and view the recipes they make and grow
 
+Notes after key implementation features
+
+- Each Recipe is represented as a Journal
+- Front page is the recipe
+- Each page represents a new journal entry with a photo of that days creation and details
+- The library resembles a libary of sorts, I want to go for a theme
+- each entry has an animated page flip and design similar to book journal
+
 ## ✨ Features
 
 - 🥗 **Recipe builder** — create, edit, and tag recipes with ingredients, steps, and nutrition
