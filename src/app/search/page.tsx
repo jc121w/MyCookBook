@@ -230,9 +230,46 @@ function RecipeSearch() {
                 >
                   <ChevronLeft className="h-4 w-4" /> Previous
                 </button>
-                <span className="min-w-[7rem] text-center text-sm tabular-nums opacity-70">
-                  Page {page} of {totalPages.toLocaleString()}
-                </span>
+                {/* Page numbers: the current one filled. Edamam only fetches pages in order,
+                    so the numbers stop one past the furthest page loaded so far */}
+                <div className="flex items-center gap-1">
+                  {pageWindow(
+                    page,
+                    pages.length + (results.hasNextPage ? 1 : 0),
+                    totalPages,
+                  ).map((item, i) =>
+                    item === "…" ? (
+                      <span key={`gap-${i}`} className="px-1 opacity-40">
+                        …
+                      </span>
+                    ) : item.reachable ? (
+                      <button
+                        key={item.n}
+                        onClick={() =>
+                          setParams({
+                            page: item.n > 1 ? String(item.n) : null,
+                          })
+                        }
+                        aria-current={item.n === page ? "page" : undefined}
+                        className={`grid h-9 min-w-9 place-items-center rounded-full px-2 font-serif text-sm tabular-nums transition-colors ${
+                          item.n === page
+                            ? "bg-primary text-primary-content font-semibold shadow-sm"
+                            : "hover:bg-base-200"
+                        }`}
+                      >
+                        {item.n.toLocaleString()}
+                      </button>
+                    ) : (
+                      // the last page: shown for scale, but can't be jumped to
+                      <span
+                        key={item.n}
+                        className="px-1 font-serif text-sm tabular-nums opacity-40"
+                      >
+                        {item.n.toLocaleString()}
+                      </span>
+                    ),
+                  )}
+                </div>
                 <button
                   className="btn btn-outline gap-1"
                   disabled={!hasNext || results.isFetchingNextPage}
@@ -244,6 +281,11 @@ function RecipeSearch() {
                   Next <ChevronRight className="h-4 w-4" />
                 </button>
               </nav>
+            )}
+            {total > PAGE_SIZE && (
+              <p className="mt-3 text-center text-xs opacity-50">
+                Page {page} of {totalPages.toLocaleString()}
+              </p>
             )}
           </>
         )}
@@ -278,4 +320,23 @@ function FilterSelect({
       ))}
     </select>
   );
+}
+
+// Which page numbers to show: a few around the current page, the first page, and the
+// last page (for scale). `reachable` = how far we can jump (pages load in order).
+//   pageWindow(6, 7, 500) → [1, "…", 4, 5, 6, 7, "…", 500]
+function pageWindow(current: number, reachable: number, last: number) {
+  const items: ({ n: number; reachable: boolean } | "…")[] = [];
+  const from = Math.max(1, current - 2);
+  const to = Math.min(Math.max(reachable, current), current + 2);
+  if (from > 1) {
+    items.push({ n: 1, reachable: true });
+    if (from > 2) items.push("…");
+  }
+  for (let n = from; n <= to; n++) items.push({ n, reachable: true });
+  if (last > to) {
+    if (last > to + 1) items.push("…");
+    items.push({ n: last, reachable: last <= reachable });
+  }
+  return items;
 }

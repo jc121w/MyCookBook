@@ -4,10 +4,12 @@ import type { RecipeEntry } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BookWithCount, BookWithEntries } from "@/app/types";
 import axios from "axios";
 import { EntryForm } from "./EntryForm";
+import { KnifeCelebration } from "./KnifeCelebration";
+import { createPortal } from "react-dom";
 import { CoverPage } from "./CoverPage";
 import { EntryDetail, JournalList } from "./JournalPage";
 import { RecipePage } from "./RecipePage";
@@ -22,6 +24,11 @@ const PAGES: Page[] = [
   { kind: "journal" },
 ];
 const JOURNAL_PAGE = 2;
+const PAGE_LABELS: Record<Page["kind"], string> = {
+  cover: "Cover",
+  recipe: "Recipe",
+  journal: "Journal",
+};
 
 // Page change: the old page slides out and fades, then the new page slides in from
 // the side you're heading toward. `d` is the direction: 1 = ▶, -1 = ◀.
@@ -76,9 +83,11 @@ export function Book({ book, onClose }: BookProps) {
   }
 
   const [writing, setWriting] = useState(false);
+  const [celebrating, setCelebrating] = useState(false); // the knife-slice after logging a cook
   const [editing, setEditing] = useState(false); // editing the recipe itself
 
   async function handleSaved(entry: RecipeEntry) {
+    setCelebrating(true); // start right away: the save just succeeded
     // Refetch this book's entries AND the shelf (so "Cooked N times" updates).
     // Awaiting means the new entry is in `entries` before we leave the form.
     await Promise.all([
@@ -86,20 +95,43 @@ export function Book({ book, onClose }: BookProps) {
       queryClient.invalidateQueries({ queryKey: ["recipes"] }),
     ]);
     setWriting(false);
-    // Show what you just wrote: the journal page, with the new entry open
+    // Behind the curtain: go to the journal page, so the reveal shows your new entry
+    // in the collection. It opens once the animation finishes (see the effect below).
     setPage([JOURNAL_PAGE, 1]);
-    setOpenEntryId(entry.id);
+    setNewEntryId(entry.id);
   }
 
+  // Open the new entry once BOTH are true: the celebration has finished, and the entry
+  // has loaded. Either can happen first (a slow network can outlast the animation),
+  // so wait for whichever is last, instead of opening on a timer.
+  const [newEntryId, setNewEntryId] = useState<number | null>(null);
+  useEffect(() => {
+    if (celebrating || newEntryId === null) return;
+    if (!entries.some((e) => e.id === newEntryId)) return;
+    setOpenEntryId(newEntryId); // grows open from its card
+    setNewEntryId(null);
+  }, [celebrating, newEntryId, entries]);
+
   function go(step: 1 | -1) {
-    const next = current + step;
-    if (next < 0 || next >= pages.length) return;
+    goTo(current + step);
+  }
+
+  // Jump to any page; the slide direction follows which way you're going
+  function goTo(target: number) {
+    if (target < 0 || target >= pages.length || target === current) return;
     setOpenEntryId(null); // leaving the journal closes any open entry
-    setPage([next, step]);
+    setPage([target, target > current ? 1 : -1]);
   }
 
   return (
     <div className="flex h-full flex-col">
+      {/* Rendered into <body> through a portal: the open book is inside a transformed
+          (animated) container, which would trap a fixed overlay inside the book */}
+      {celebrating &&
+        createPortal(
+          <KnifeCelebration onDone={() => setCelebrating(false)} />,
+          document.body,
+        )}
       <div className="flex items-center justify-between p-2">
         {/* Top bar: what you're doing (left) and close (right).
             Adding a page lives on the journal page itself, as its first card. */}
@@ -193,10 +225,35 @@ export function Book({ book, onClose }: BookProps) {
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            {/* Navigation bar: arrows + where you are */}
-            <span className="text-sm tabular-nums opacity-70">
-              {`${current + 1} / ${pages.length}`}
-            </span>
+            {/* Where you are: a tab per page, the current one filled; tap any to jump */}
+            <nav
+              aria-label="Pages"
+              className="bg-base-200/70 flex gap-1 rounded-full p-1"
+            >
+              {pages.map((p, i) => (
+                <button
+                  key={p.kind}
+                  type="button"
+                  onClick={() => goTo(i)}
+                  aria-current={i === current ? "page" : undefined}
+                  className={`relative rounded-full px-3 py-1 font-serif text-sm transition-colors ${
+                    i === current
+                      ? "text-primary-content"
+                      : "opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  {/* The filled pill slides between tabs */}
+                  {i === current && (
+                    <motion.span
+                      layoutId={`book-${book.id}-page-pill`}
+                      className="bg-primary absolute inset-0 rounded-full shadow-sm"
+                      transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    />
+                  )}
+                  <span className="relative">{PAGE_LABELS[p.kind]}</span>
+                </button>
+              ))}
+            </nav>
             <button
               className="btn btn-circle"
               onClick={() => go(1)}
