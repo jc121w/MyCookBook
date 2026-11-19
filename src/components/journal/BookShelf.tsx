@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { BookWithCount } from "@/app/types";
 import { Book } from "./Book";
 
@@ -66,31 +66,137 @@ function useWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
-// Fill each shelf left to right; start a new shelf when the next book won't fit.
-//   widths [50, 40, 60], space 100 → [[50, 40], [60]]
-function packRows<T>(
-  items: T[],
-  widthOf: (item: T) => number,
-  space: number,
-): T[][] {
-  const rows: T[][] = [];
-  let row: T[] = [];
-  let used = 0;
-  for (const item of items) {
-    const w = widthOf(item);
-    const next = row.length === 0 ? w : used + BOOK_GAP + w;
-    if (row.length > 0 && next > space) {
-      rows.push(row);
-      row = [item];
-      used = w;
-    } else {
-      row.push(item);
-      used = next;
-    }
+// ── Grouping ─────────────────────────────────────────────
+
+// Which recipe field sorts books onto shelves. Edamam fills all three (custom recipes may not).
+type GroupBy = "dishType" | "cuisineType" | "mealType";
+const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
+  { value: "dishType", label: "Dish" },
+  { value: "cuisineType", label: "Cuisine" },
+  { value: "mealType", label: "Meal" },
+];
+const UNSORTED = "Uncategorized";
+
+// "main course" → "Main Course", "lunch/dinner" → "Lunch/Dinner"
+const titleCase = (s: string) => s.replace(/\b\w/g, (c) => c.toUpperCase());
+
+// Books → [{ name: "Main Course", books: [...] }, ...], biggest section first,
+// Uncategorized last. A recipe with several types goes under its first one.
+function groupBooks(books: BookWithCount[], by: GroupBy) {
+  const groups = new Map<string, BookWithCount[]>();
+  for (const book of books) {
+    const first = book[by]?.[0];
+    const name = first ? titleCase(first) : UNSORTED;
+    groups.set(name, [...(groups.get(name) ?? []), book]);
   }
-  if (row.length > 0) rows.push(row);
-  return rows;
+  return [...groups]
+    .map(([name, books]) => ({ name, books }))
+    .sort(
+      (a, b) =>
+        Number(a.name === UNSORTED) - Number(b.name === UNSORTED) ||
+        b.books.length - a.books.length ||
+        a.name.localeCompare(b.name),
+    );
 }
+
+// One run of same-category books on a shelf. A section that spills onto the next
+// shelf continues there without repeating its label.
+type Section = {
+  name: string;
+  count: number;
+  showLabel: boolean;
+  books: BookWithCount[];
+};
+
+const SECTION_SPACE = 10; // px on each side of a bookend
+const BOOKEND_WIDTH = 8;
+
+// Rough width of a label plate (10px uppercase, wide tracking ≈ 8.5px per character)
+function plateWidth(section: { name: string; count: number }) {
+  return (section.name.length + String(section.count).length + 3) * 8.5 + 22;
+}
+
+// Width of a section on the shelf: its books, or its label plate if that's wider
+function sectionWidth(section: Section) {
+  const books = section.books.reduce(
+    (sum, b, i) => sum + spineLook(b.id).width + (i > 0 ? BOOK_GAP : 0),
+    0,
+  );
+  return section.showLabel ? Math.max(books, plateWidth(section)) : books;
+}
+
+// Lay sections onto shelves left to right, wrapping like text:
+//   [Main Course ×5 | Soup ×3]  [Desserts ×2 | Bread ×1]  ...
+function packShelves(
+  groups: { name: string; books: BookWithCount[] }[],
+  space: number,
+) {
+  const shelves: Section[][] = [];
+  let shelf: Section[] = [];
+  let used = 0; // width of finished sections + bookends on the current shelf
+
+  for (const group of groups) {
+    let current = null as Section | null; // (cast: keeps TS from narrowing it to null inside the loop)
+
+    for (const book of group.books) {
+      if (current) {
+        // Add to the open section if it still fits...
+        const grown = { ...current, books: [...current.books, book] };
+        if (used + sectionWidth(grown) <= space) {
+          current.books.push(book);
+          continue;
+        }
+        // ...otherwise continue the section on a new shelf, without repeating its label
+        shelves.push(shelf);
+        current = { ...current, showLabel: false, books: [book] };
+        shelf = [current];
+        used = 0;
+        continue;
+      }
+
+      // First book of a section: needs a bookend if the shelf already has books
+      current = {
+        name: group.name,
+        count: group.books.length,
+        showLabel: true,
+        books: [book],
+      };
+      const bookend = shelf.length > 0 ? SECTION_SPACE * 2 + BOOKEND_WIDTH : 0;
+      if (shelf.length > 0 && used + bookend + sectionWidth(current) > space) {
+        shelves.push(shelf);
+        shelf = [];
+        used = 0;
+      } else {
+        used += bookend;
+      }
+      shelf.push(current);
+    }
+
+    if (current) used += sectionWidth(current);
+  }
+
+  if (shelf.length > 0) shelves.push(shelf);
+  return shelves;
+}
+
+function Bookend() {
+  return (
+    <div
+      aria-hidden
+      className="shrink-0 rounded-t-[2px]"
+      style={{
+        width: BOOKEND_WIDTH,
+        height: 72,
+        background:
+          "linear-gradient(90deg, #3d3d3d, #9a9a9a 40%, #555 70%, #2e2e2e)",
+        boxShadow: "2px 2px 4px rgb(0 0 0 / .5)",
+      }}
+    />
+  );
+}
+
+// Brass label plate, like the holders on library shelves
+const BRASS = "linear-gradient(180deg, #ecd28c, #c9a24c 55%, #a8832f)";
 
 // ── Components ───────────────────────────────────────────
 
@@ -106,17 +212,20 @@ export function BookShelf({ books }: BookShelfProps) {
   // Was the book pulled out (tilted) when clicked? Then the open book starts tilted too.
   const [openTilted, setOpenTilted] = useState(false);
 
+  const [groupBy, setGroupBy] = useState<GroupBy>("dishType");
   const [shelfRef, shelfWidth] = useWidth<HTMLDivElement>();
-  const rows =
+
+  // Sections flow along the shelves like real books: a small section shares a shelf
+  // with the next one (a bookend between them); a big one continues onto the next shelf.
+  const shelves =
     shelfWidth > 0
-      ? packRows(
-          books,
-          (b) => spineLook(b.id).width,
+      ? packShelves(
+          groupBooks(books, groupBy),
           shelfWidth - SHELF_PADDING_X * 2,
         )
       : [];
   // Always show at least two shelves so a small library still looks like a bookcase
-  while (shelfWidth > 0 && rows.length < 2) rows.push([]);
+  while (shelfWidth > 0 && shelves.length < 2) shelves.push([]);
 
   if (books.length === 0) {
     return (
@@ -128,6 +237,29 @@ export function BookShelf({ books }: BookShelfProps) {
 
   return (
     <>
+      {/* Shelf controls: how many books, and how they're sorted */}
+      <div className="mb-3 flex w-full flex-wrap items-center justify-between gap-2">
+        <p className="text-sm opacity-60">
+          {books.length} {books.length === 1 ? "book" : "books"}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs opacity-60">Sort shelves by</span>
+          <div role="tablist" className="tabs tabs-box tabs-sm">
+            {GROUP_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                role="tab"
+                aria-selected={groupBy === option.value}
+                className={`tab ${groupBy === option.value ? "tab-active" : ""}`}
+                onClick={() => setGroupBy(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Bookcase frame */}
       <div
         className="w-full rounded-md p-3 shadow-xl"
@@ -136,32 +268,66 @@ export function BookShelf({ books }: BookShelfProps) {
         {/* Back wall. Measured, so we know how many books fit on each shelf. */}
         <div
           ref={shelfRef}
-          className="min-h-[200px] overflow-hidden rounded-sm"
+          // No overflow-hidden: the hover tag above a book may poke past the top shelf
+          className="min-h-[200px] rounded-sm"
           style={{
             background: WOOD.back,
             boxShadow: "inset 0 8px 16px rgb(0 0 0 / .6)",
           }}
         >
-          {rows.map((row, i) => (
+          {shelves.map((sections, i) => (
             <div key={i}>
               {/* Books stand at the bottom of the row */}
               <div
                 className="flex items-end"
                 style={{
                   height: ROW_HEIGHT,
-                  gap: BOOK_GAP,
+                  gap: SECTION_SPACE,
                   paddingInline: SHELF_PADDING_X,
                 }}
               >
-                {row.map((book) => (
-                  <Spine
-                    key={book.id}
-                    book={book}
-                    onOpen={(fromPulledOut) => {
-                      setOpenTilted(fromPulledOut);
-                      setOpenId(book.id);
-                    }}
-                  />
+                {sections.map((section, j) => (
+                  <Fragment key={`${section.name}-${j}`}>
+                    {j > 0 && <Bookend />}
+                    <div
+                      className="relative flex items-end"
+                      style={{
+                        gap: BOOK_GAP,
+                        // a labeled section is at least as wide as its plate
+                        minWidth: section.showLabel
+                          ? plateWidth(section)
+                          : undefined,
+                      }}
+                    >
+                      {section.books.map((book) => (
+                        <Spine
+                          key={book.id}
+                          book={book}
+                          onOpen={(fromPulledOut) => {
+                            setOpenTilted(fromPulledOut);
+                            setOpenId(book.id);
+                          }}
+                        />
+                      ))}
+
+                      {/* Brass plate on the ledge, under the section's first book */}
+                      {section.showLabel && (
+                        <span
+                          className="absolute left-0 z-[2] flex h-5 items-center gap-1.5 rounded-sm px-2.5 text-[10px] font-semibold tracking-[0.18em] whitespace-nowrap uppercase"
+                          style={{
+                            top: "calc(100% + 5px)", // centered on the ledge's front edge
+                            background: BRASS,
+                            color: "#3b2a14",
+                            boxShadow:
+                              "inset 0 1px 0 rgb(255 255 255 / .5), 0 1px 2px rgb(0 0 0 / .5)",
+                          }}
+                        >
+                          {section.name}
+                          <span className="opacity-60">· {section.count}</span>
+                        </span>
+                      )}
+                    </div>
+                  </Fragment>
                 ))}
               </div>
 
@@ -170,7 +336,7 @@ export function BookShelf({ books }: BookShelfProps) {
                 <div style={{ height: 7, background: WOOD.ledgeTop }} />
                 <div
                   style={{
-                    height: 14,
+                    height: 16,
                     background: WOOD.ledgeFront,
                     boxShadow: "0 8px 12px rgb(0 0 0 / .45)", // shadow onto the wall below
                   }}
@@ -259,76 +425,104 @@ function Spine({
   const [hovered, setHovered] = useState(false);
 
   return (
-    <motion.button
-      layoutId={`book-${book.id}`} // same id as the open book → it grows from here
-      onClick={() => onOpen(hovered)}
-      onHoverStart={() => setHovered(true)}
-      onHoverEnd={() => setHovered(false)}
-      // Pulled out: lifts off the shelf, tips toward you, and casts a bigger shadow.
-      // transformOrigin "bottom left" = it pivots on its bottom corner, like a real book.
-      whileHover={{
-        ...PULLED_OUT,
-        boxShadow: "8px 14px 18px rgb(0 0 0 / .55)",
-      }}
-      transition={{ duration: 0.22, ease: EASE, ...LAYOUT_TRANSITION }}
-      // Keyboard users get a focus ring instead of the tilt (a click also focuses,
-      // and a tilt-on-focus would keep the book tilted after clicking)
-      className="relative shrink-0 overflow-hidden rounded-[3px] outline-offset-2 hover:z-10 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-white"
-      style={{
-        width: look.width,
-        height: look.height,
-        background: look.bg,
-        color: look.fg,
-        transformOrigin: "bottom left",
-        boxShadow: "2px 3px 5px rgb(0 0 0 / .45)",
-      }}
-      title={`${book.label} · ${logs}`}
-      aria-label={`${book.label}, ${logs}`}
-    >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{ background: SPINE_SHADE }}
-      />
+    // Wrapper holds the hover tag (the button itself clips its decorations).
+    // z-20 on hover lifts book + tag above neighbors and the shelves.
+    <div className="relative shrink-0 focus-within:z-20 hover:z-20">
+      <AnimatePresence>
+        {hovered && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.15, ease: EASE }}
+            className="pointer-events-none absolute left-1/2 -translate-x-1/2"
+            // sits just above the book's pulled-out top
+            style={{ bottom: look.height - PULLED_OUT.y + 10 }}
+          >
+            <div className="bg-base-100 text-base-content w-max max-w-72 rounded-lg px-3 py-2 shadow-xl ring-1 ring-black/10">
+              <p className="font-serif text-sm leading-snug font-semibold">
+                {book.label}
+              </p>
+              <p className="mt-0.5 text-xs whitespace-nowrap opacity-60">
+                {[book.source, logs].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+            {/* little pointer under the tag */}
+            <div className="bg-base-100 absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45" />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {look.variant === "bands" && (
-        <>
-          <Band top={10} color={look.accent} />
-          <Band top={16} color={look.accent} thin />
-          <Band bottom={26} color={look.accent} thin />
-          <Band bottom={32} color={look.accent} />
-        </>
-      )}
-
-      {/* Title runs down the spine; the ellipsis kicks in when it's too long */}
-      <span className="absolute inset-x-0 top-7 bottom-11 flex justify-center">
+      <motion.button
+        layoutId={`book-${book.id}`} // same id as the open book → it grows from here
+        onClick={() => onOpen(hovered)}
+        onHoverStart={() => setHovered(true)}
+        onHoverEnd={() => setHovered(false)}
+        // Pulled out: lifts off the shelf, tips toward you, and casts a bigger shadow.
+        // transformOrigin "bottom left" = it pivots on its bottom corner, like a real book.
+        whileHover={{
+          ...PULLED_OUT,
+          boxShadow: "8px 14px 18px rgb(0 0 0 / .55)",
+        }}
+        transition={{ duration: 0.22, ease: EASE, ...LAYOUT_TRANSITION }}
+        // Keyboard users get a focus ring instead of the tilt (a click also focuses,
+        // and a tilt-on-focus would keep the book tilted after clicking)
+        className="relative block overflow-hidden rounded-[3px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-white"
+        style={{
+          width: look.width,
+          height: look.height,
+          background: look.bg,
+          color: look.fg,
+          transformOrigin: "bottom left",
+          boxShadow: "2px 3px 5px rgb(0 0 0 / .45)",
+        }}
+        aria-label={`${book.label}, ${logs}`}
+      >
         <span
-          className="overflow-hidden font-serif text-[13px] font-semibold tracking-wide text-ellipsis whitespace-nowrap [writing-mode:vertical-rl]"
-          style={
-            look.variant === "label"
-              ? {
-                  background: look.fg,
-                  color: look.bg,
-                  padding: "8px 3px",
-                  borderRadius: 2,
-                  maxHeight: "100%",
-                }
-              : { maxHeight: "100%" }
-          }
-        >
-          {book.label}
-        </span>
-      </span>
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: SPINE_SHADE }}
+        />
 
-      {count > 0 && (
-        <span
-          className="absolute inset-x-0 bottom-2 text-center text-[10px] font-bold"
-          style={{ color: look.accent }}
-        >
-          {count}
+        {look.variant === "bands" && (
+          <>
+            <Band top={10} color={look.accent} />
+            <Band top={16} color={look.accent} thin />
+            <Band bottom={26} color={look.accent} thin />
+            <Band bottom={32} color={look.accent} />
+          </>
+        )}
+
+        {/* Title runs down the spine; the ellipsis kicks in when it's too long */}
+        <span className="absolute inset-x-0 top-7 bottom-11 flex justify-center">
+          <span
+            className="overflow-hidden font-serif text-[13px] font-semibold tracking-wide text-ellipsis whitespace-nowrap [writing-mode:vertical-rl]"
+            style={
+              look.variant === "label"
+                ? {
+                    background: look.fg,
+                    color: look.bg,
+                    padding: "8px 3px",
+                    borderRadius: 2,
+                    maxHeight: "100%",
+                  }
+                : { maxHeight: "100%" }
+            }
+          >
+            {book.label}
+          </span>
         </span>
-      )}
-    </motion.button>
+
+        {count > 0 && (
+          <span
+            className="absolute inset-x-0 bottom-2 text-center text-[10px] font-bold"
+            style={{ color: look.accent }}
+          >
+            {count}
+          </span>
+        )}
+      </motion.button>
+    </div>
   );
 }
 
