@@ -317,6 +317,22 @@ export function BookShelf({
   const [groupBy, setGroupBy] = useState<GroupBy>("dishType");
   const [shelfRef, shelfWidth] = useWidth<HTMLDivElement>();
 
+  // While a book is open it's a modal: lock the page behind it so it can't scroll.
+  // (Scrolling INSIDE the book still works.) The scrollbar's width is added as padding
+  // so the page doesn't jump sideways when the scrollbar disappears.
+  const isOpen = open != null;
+  useEffect(() => {
+    if (!isOpen) return;
+    const { overflow, paddingRight } = document.body.style;
+    const scrollbar = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = "hidden";
+    if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
+    return () => {
+      document.body.style.overflow = overflow; // put back whatever was there
+      document.body.style.paddingRight = paddingRight;
+    };
+  }, [isOpen]);
+
   // Arriving with a book to open (from search's "On your shelf", or the profile):
   // wait until the shelf is drawn, then open it, so it grows out of its own spine
   // and you see where it lives. Once per book id.
