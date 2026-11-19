@@ -3,11 +3,11 @@ import { getKitchenStats, type KitchenStats } from "@/lib/kitchenStats";
 import { titleCase } from "@/lib/recipeOptions";
 import { Stars } from "@/components/journal/StarRating";
 import { SignOutButton } from "@/components/buttons/SignOutButton";
+import { Avatar } from "@/components/Avatar";
 import {
   BookOpen,
   Camera,
   ChefHat,
-  CircleUser,
   Clock,
   CookingPot,
   Settings,
@@ -28,15 +28,10 @@ export default async function ProfilePage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-10">
       {/* ── Who ── */}
       <header className="flex flex-col items-center gap-3 text-center">
-        <div className="avatar">
-          <div className="ring-base-300 ring-offset-base-100 w-24 rounded-full ring-2 ring-offset-4">
-            {image ? (
-              <img src={image} alt="" />
-            ) : (
-              <CircleUser className="h-24 w-24 opacity-50" strokeWidth={1.25} />
-            )}
-          </div>
-        </div>
+        {/* Your photo (or initial) in a soft double ring, like a framed portrait */}
+        <span className="ring-base-100 bg-base-300/60 rounded-full p-1.5 shadow-md ring-4">
+          <Avatar name={name} image={image} size={104} />
+        </span>
         <div>
           <h1 className="font-serif text-3xl font-bold">{name}</h1>
           <p className="mt-1 font-serif italic opacity-60">
@@ -44,7 +39,6 @@ export default async function ProfilePage() {
               ? `Cooking since ${monthYear(stats.firstCook)}`
               : "Your kitchen journal starts here"}
           </p>
-          <p className="mt-1 text-xs opacity-45">{email}</p>
         </div>
       </header>
 
@@ -64,25 +58,25 @@ export default async function ProfilePage() {
         </>
       )}
 
-      {/* ── Elsewhere ── */}
-      <nav className="border-base-300 flex flex-wrap items-center justify-center gap-2 border-t pt-6">
+      {/* ── Footer: a link to your shelf, then account things, quietly ── */}
+      <footer className="border-base-300 flex flex-col items-center gap-5 border-t pt-6">
         <Link
           href="/library"
           className="btn btn-ghost btn-sm gap-1.5 font-serif font-normal"
         >
           <BookOpen className="h-4 w-4" /> Your shelf
         </Link>
-        <Link
-          href="/settings"
-          className="btn btn-ghost btn-sm gap-1.5 font-serif font-normal"
-        >
-          <Settings className="h-4 w-4" /> Settings
-        </Link>
-        {/* The button is styled for the sidebar; this wrapper makes it match the links here */}
-        <span className="btn btn-ghost btn-sm font-serif font-normal [&_svg]:h-4 [&_svg]:w-4 [&>div]:flex [&>div]:items-center [&>div]:gap-1.5">
-          <SignOutButton />
-        </span>
-      </nav>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
+          <span className="opacity-50">Signed in as {email}</span>
+          <span aria-hidden className="opacity-30">
+            ·
+          </span>
+          {/* The button is styled for the sidebar; this makes it a small text link */}
+          <span className="link link-hover opacity-70 hover:opacity-100 [&_svg]:hidden [&>div]:inline">
+            <SignOutButton />
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }

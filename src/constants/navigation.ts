@@ -3,7 +3,6 @@ import {
   LucideIcon,
   Search,
   Settings,
-  User,
   UtensilsCrossed,
 } from "lucide-react";
 type Session = typeof auth.$Infer.Session;
@@ -27,12 +26,12 @@ export const sideBarLinks: SidebarLink[] = [
     icon: Search,
     needsSession: false,
   },
-  { href: "/profile", label: "Profile", icon: User, needsSession: true },
+  // Profile: reached from your avatar in the top-right, so it's not repeated here
   {
     href: "/library",
     label: "My Recipes",
     icon: UtensilsCrossed,
     needsSession: true,
   },
-  { href: "/settings", label: "Settings", icon: Settings, needsSession: false },
+  // { href: "/settings", label: "Settings", icon: Settings, needsSession: false },
 ];
