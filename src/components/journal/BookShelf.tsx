@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useDragControls } from "motion/react";
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   CakeSlice,
   ChefHat,
@@ -639,6 +639,33 @@ export function BookShelf({
   );
 }
 
+// The hover tag's box. Centered over the book, but if that would push it past the
+// edge of the screen (books at either end, small phones), it slides back inside.
+// The little pointer below stays centered on the book.
+function TagBubble({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [shift, setShift] = useState(0);
+
+  useLayoutEffect(() => {
+    const box = ref.current?.getBoundingClientRect();
+    if (!box) return;
+    const margin = 8;
+    if (box.left < margin) setShift(margin - box.left);
+    else if (box.right > window.innerWidth - margin)
+      setShift(window.innerWidth - margin - box.right);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="bg-base-100 text-base-content w-max max-w-[min(18rem,calc(100vw-16px))] rounded-lg px-3 py-2 shadow-xl ring-1 ring-black/10"
+      style={{ translate: `${shift}px 0` }}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ── Press-and-hold helpers ──
 const RESTING = {
   scale: 1,
@@ -765,14 +792,18 @@ function Spine({
             // sits just above the book's pulled-out top
             style={{ bottom: look.height - PULLED_OUT.y + 10 }}
           >
-            <div className="bg-base-100 text-base-content w-max max-w-72 rounded-lg px-3 py-2 shadow-xl ring-1 ring-black/10">
-              <p className="font-serif text-sm leading-snug font-semibold">
+            <TagBubble>
+              <p className="font-serif text-sm leading-snug font-semibold break-words">
                 {book.label}
               </p>
-              <p className="mt-0.5 text-xs whitespace-nowrap opacity-60">
-                {[book.source, logs].filter(Boolean).join(" · ")}
-              </p>
-            </div>
+              {/* Source and log count on their own lines, so long sources wrap instead of overflowing */}
+              {book.source && (
+                <p className="mt-0.5 text-xs leading-snug break-words opacity-60">
+                  {book.source}
+                </p>
+              )}
+              <p className="text-xs leading-snug opacity-60">{logs}</p>
+            </TagBubble>
             {/* little pointer under the tag */}
             <div className="bg-base-100 absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45" />
           </motion.div>

@@ -44,7 +44,7 @@ function NutritionPanel({
 }) {
   return (
     <>
-      <h2 className="mb-1 text-2xl font-semibold">Nutrition Facts</h2>
+      <h2 className="mb-1 font-serif text-2xl font-bold">Nutrition Facts</h2>
       <p className="text-base-content/60 mb-4 text-sm">
         Per serving · recipe makes {recipe.yield}
       </p>
@@ -85,7 +85,7 @@ function NutritionPanel({
   );
 }
 export const RecipeDetail = ({ recipe }: RecipeDetailProps) => (
-  <div className="mx-auto max-w-4xl px-4 pb-16">
+  <div className="mx-auto max-w-4xl">
     <BackButton />
     {/* Header: image + at-a-glance stats side by side */}
     <div className="mt-6 grid gap-8 lg:grid-cols-2">
@@ -99,7 +99,7 @@ export const RecipeDetail = ({ recipe }: RecipeDetailProps) => (
 
       <div className="flex flex-col gap-5">
         <div>
-          <h1 className="text-3xl leading-tight font-bold text-pretty">
+          <h1 className="font-serif text-3xl leading-tight font-bold text-pretty md:text-4xl">
             {recipe.label}
           </h1>
           <p className="text-base-content/60 mt-1 text-sm">
@@ -160,7 +160,7 @@ export const RecipeDetail = ({ recipe }: RecipeDetailProps) => (
       </div>
     </div>
     {/* Ingredients — surfaces use base-100 on the base-200 page, base-300 borders */}
-    <h2 className="mt-12 mb-4 text-2xl font-semibold">Ingredients</h2>
+    <h2 className="mt-12 mb-4 font-serif text-2xl font-bold">Ingredients</h2>
     <ul className="grid gap-2 sm:grid-cols-2">
       {recipe.ingredientLines.map((line, i) => (
         <li
@@ -171,7 +171,8 @@ export const RecipeDetail = ({ recipe }: RecipeDetailProps) => (
         </li>
       ))}
     </ul>
-    <div className="my-10">
+    {/* Instructions: Edamam only links out to the original recipe */}
+    <div className="mt-8 flex flex-col items-start gap-2">
       {recipe.url && (
         <a
           href={recipe.url}
@@ -187,7 +188,11 @@ export const RecipeDetail = ({ recipe }: RecipeDetailProps) => (
         Edamam provides ingredients and nutrition — full cooking steps are on
         the original site.
       </p>
+    </div>
+
+    {/* Its own section, with the same spacing as Ingredients above */}
+    <section className="mt-12">
       <NutritionPanel recipe={recipe} />
-    </div>{" "}
+    </section>
   </div>
 );

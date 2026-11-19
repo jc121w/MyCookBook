@@ -6,7 +6,7 @@ import { Stars } from "@/components/journal/StarRating";
 // Signed in: skip the pitch's call-to-action and take them to their shelf.
 export function Landing({ signedIn }: { signedIn: boolean }) {
   return (
-    <div className="flex flex-col gap-20 py-10 md:py-16">
+    <div className="flex flex-col gap-20">
       {/* ── Hero: what it is, in one line, and a picture of it ── */}
       <section className="grid items-center gap-12 md:grid-cols-2">
         <div className="flex flex-col items-center gap-5 text-center md:items-start md:text-left">

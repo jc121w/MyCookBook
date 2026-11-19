@@ -27,49 +27,53 @@ function NavLinks({ session }: { session: Session | null }) {
 
 export const Navbar = async ({ session }: { session: Session | null }) => {
   return (
-    <div className="navbar bg-base-100 border-b px-4 md:px-20">
-      {/* LEFT: hamburger (mobile only) + logo */}
-      <div className="navbar-start">
-        {/* The menu (phones and tablets only): the page links, which are inline on desktop.
+    // Full-width bar with a border; the contents use the page's width and padding so
+    // the logo lines up with the page content below
+    <div className="bg-base-100 border-base-300 border-b">
+      <div className="navbar mx-auto max-w-6xl px-2 sm:px-4">
+        {/* LEFT: hamburger (mobile only) + logo */}
+        <div className="navbar-start">
+          {/* The menu (phones and tablets only): the page links, which are inline on desktop.
             Account things, including Sign out, live on your profile (tap your avatar). */}
-        {session && (
-          <div className="dropdown">
-            <div
-              tabIndex={0}
-              role="button"
-              className="btn btn-ghost btn-square lg:hidden"
-              aria-label="Menu"
-            >
-              <Menu className="h-5 w-5" />
+          {session && (
+            <div className="dropdown">
+              <div
+                tabIndex={0}
+                role="button"
+                className="btn btn-ghost btn-square lg:hidden"
+                aria-label="Menu"
+              >
+                <Menu className="h-5 w-5" />
+              </div>
+              <ul
+                tabIndex={0}
+                className="menu menu-sm dropdown-content rounded-box bg-base-100 z-50 mt-3 w-52 gap-1 p-2 shadow"
+              >
+                <NavLinks session={session} />
+              </ul>
             </div>
-            <ul
-              tabIndex={0}
-              className="menu menu-sm dropdown-content rounded-box bg-base-100 z-50 mt-3 w-52 gap-1 p-2 shadow"
-            >
-              <NavLinks session={session} />
-            </ul>
-          </div>
-        )}
-        <Link
-          href="/"
-          className="btn btn-ghost text-lg sm:text-xl"
-          prefetch={false}
-        >
-          <NotebookText className="h-6 w-6 sm:h-8 sm:w-8" />
-          MyCookBook
-        </Link>
-      </div>
+          )}
+          <Link
+            href="/"
+            className="btn btn-ghost px-2 text-lg sm:text-xl" // px-2: the logo icon lines up with the page content
+            prefetch={false}
+          >
+            <NotebookText className="h-6 w-6 sm:h-8 sm:w-8" />
+            MyCookBook
+          </Link>
+        </div>
 
-      {/* CENTER: inline links (desktop only) */}
-      <div className="navbar-center hidden lg:flex">
-        <ul className="menu menu-horizontal gap-1 px-1">
-          <NavLinks session={session} />
-        </ul>
-      </div>
+        {/* CENTER: inline links (desktop only) */}
+        <div className="navbar-center hidden lg:flex">
+          <ul className="menu menu-horizontal gap-1 px-1">
+            <NavLinks session={session} />
+          </ul>
+        </div>
 
-      <div className="navbar-end gap-3">
-        <ThemeSwitcher />
-        <AccountButton session={session} />
+        <div className="navbar-end gap-3">
+          <ThemeSwitcher />
+          <AccountButton session={session} />
+        </div>
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ export default async function ProfilePage() {
   const stats = await getKitchenStats(session.user.id);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-10">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10">
       {/* ── Who ── */}
       <header className="flex flex-col items-center gap-3 text-center">
         {/* Your photo (or initial) in a soft double ring, like a framed portrait */}

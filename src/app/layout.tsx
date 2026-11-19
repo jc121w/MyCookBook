@@ -31,7 +31,8 @@ export default async function RootLayout({
         <Providers>
           <Navbar session={session} />
 
-          <main className="mx-auto max-w-7xl p-6 px-8 md:px-20 2xl:max-w-[1536px]">
+          {/* The one place that sets page width and padding; pages only add their own layout */}
+          <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 md:py-12">
             {children}
           </main>
         </Providers>

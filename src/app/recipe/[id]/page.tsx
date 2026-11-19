@@ -33,7 +33,7 @@ export default function RecipeDetailPage() {
   if (isLoading) return <RecipeDetailSkeleton />;
   if (error || !recipe)
     return (
-      <div className="mx-auto max-w-4xl px-4">
+      <div className="mx-auto max-w-4xl">
         <div className="alert alert-error mt-10">
           <span>Couldn't load this recipe.</span>
         </div>

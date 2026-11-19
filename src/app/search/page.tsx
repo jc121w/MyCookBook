@@ -106,8 +106,8 @@ function RecipeSearch() {
   const activeFilters = Object.values(filters).filter(Boolean).length;
 
   return (
-    <main className="min-h-screen">
-      <section className="mx-auto max-w-6xl px-4 pt-10 pb-6">
+    <div>
+      <section className="pb-8">
         <div className="text-center">
           <h1 className="font-serif text-4xl font-bold tracking-tight">
             Find a recipe
@@ -131,7 +131,6 @@ function RecipeSearch() {
               type="search"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              placeholder="e.g. chicken curry"
               className="grow"
               aria-label="Search recipes"
             />
@@ -178,7 +177,7 @@ function RecipeSearch() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-16">
+      <section>
         {query === "" ? (
           // Before searching: ideas, not an empty page
           <div className="py-12 text-center">
@@ -249,7 +248,7 @@ function RecipeSearch() {
           </>
         )}
       </section>
-    </main>
+    </div>
   );
 }
 

@@ -36,7 +36,7 @@ const Library = () => {
   if (isLoadingRecipes) {
     return (
       // Bookcase-shaped placeholder while the shelf loads
-      <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      <div className="w-full">
         <div className="skeleton mb-3 h-8 w-full max-w-xs" />
         <div className="skeleton h-[520px] w-full rounded-md" />
       </div>
@@ -47,7 +47,7 @@ const Library = () => {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10">
+    <div className="w-full">
       {/* Opened by the "New book" slot on the shelf */}
       <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
         <RecipeForm onDone={() => modalRef.current?.close()} />

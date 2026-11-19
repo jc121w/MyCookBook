@@ -6,6 +6,9 @@ import { useMutation } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
 import { signUp } from "@/lib/actions/auth-actions";
+import Link from "next/link";
+import { AuthCard, AuthField } from "./AuthCard";
+import { SocialButtons } from "./SocialButtons";
 
 type FormInputPost = {
   email: string;
@@ -59,94 +62,95 @@ const SignUp = () => {
     ? (error as AxiosError<ErrorResponse>)?.response?.data?.message
     : null;
   return (
-    <form
-      onSubmit={handleSubmit(submit)}
-      className="m-auto mt-32 flex w-fit flex-col gap-5 border bg-slate-200 p-5"
+    <AuthCard
+      title="Start your cookbook"
+      subtitle="Free, and your journal is private to you."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link href="/sign-in" className="link link-hover font-medium">
+            Sign in
+          </Link>
+        </>
+      }
     >
-      <div>
-        <label className="input-bordered input flex items-center gap-2">
-          <Mail />
+      <form onSubmit={handleSubmit(submit)} className="flex flex-col gap-4">
+        <AuthField
+          label="Email"
+          icon={<Mail />}
+          error={errors.email && "Enter your email"}
+        >
           <input
             type="email"
             className="grow"
-            placeholder="Email"
-            {...register("email", {
-              required: true,
-            })}
+            placeholder="you@example.com"
+            autoComplete="email"
+            {...register("email", { required: true })}
           />
-        </label>{" "}
-        {errors.email && (
-          <span className="prose text-red-600">{errors.email?.message}</span>
-        )}
-      </div>
-      <div>
-        <label className="input-bordered input flex items-center gap-2">
-          <User />
+        </AuthField>
+        <AuthField
+          label="Username"
+          icon={<User />}
+          error={
+            errors.username?.message || (errors.username && "Pick a username")
+          }
+        >
           <input
             type="text"
             className="grow"
-            placeholder="Username"
+            placeholder="3–20 letters, numbers, _ or -"
+            autoComplete="username"
             {...register("username", {
               required: true,
               pattern: {
                 value: /^[a-zA-Z0-9_-]{3,20}$/,
-                message: "Invalid Username",
-              },
-              minLength: {
-                value: 3,
-                message: "Username must be at least 3 characters",
-              },
-              maxLength: {
-                value: 20,
-                message: "Username must be less than 20 characters",
+                message: "Use 3–20 letters, numbers, _ or -",
               },
             })}
           />
-        </label>
-        {errors.username && (
-          <span className="prose text-red-600">{errors.username?.message}</span>
-        )}
-      </div>
-      <div>
-        <label className="input-bordered input flex items-center gap-2">
-          <RectangleEllipsis />
+        </AuthField>
+        <AuthField
+          label="Password"
+          icon={<RectangleEllipsis />}
+          error={
+            errors.password?.message || (errors.password && "Choose a password")
+          }
+        >
           <input
             type="password"
             className="grow"
-            placeholder="Password"
+            placeholder="At least 8 characters"
+            autoComplete="new-password"
             {...register("password", {
               required: true,
-
               minLength: {
                 value: 8,
                 message: "Password must be at least 8 characters",
               },
             })}
           />
-        </label>
-        {errors.password && (
-          <span className="text-red-600">{errors.password?.message}</span>
+        </AuthField>
+        {isError && (
+          <p className="text-error text-sm">
+            {errorMessage || "Couldn't create the account. Try again."}
+          </p>
         )}
-      </div>
-      <div>
         <button
           type="submit"
-          className={`btn w-full ${isPending ? "btn-primary" : "btn-neutral"}`}
-          disabled={isPending} // Disable button when loading
+          className="btn btn-primary mt-1 w-full font-serif"
+          disabled={isPending}
         >
           {isPending ? (
-            <span className="loading loading-spinner"></span>
+            <span className="loading loading-spinner loading-sm" />
           ) : (
-            "Sign Up"
+            "Create account"
           )}
         </button>
-      </div>
-      {isError && (
-        <span className="text-center text-red-600">
-          {errorMessage || "Error Occured"}
-        </span>
-      )}
-    </form>
+      </form>
+
+      <div className="divider my-0 text-xs opacity-60">or</div>
+      <SocialButtons />
+    </AuthCard>
   );
 };
 

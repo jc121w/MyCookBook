@@ -5,6 +5,22 @@
     coffee --prefersdark;
 }
 @plugin "@tailwindcss/typography";
+
+/* Soften the light theme's primary: caramellatte's pure black made every main button
+   (Sign in, Create account, Search, Save) a harsh black block on cream. A warm
+   espresso brown, from the same family as the shelf and book colors, instead.
+   !important because DaisyUI sets primary with a very specific selector that would
+   otherwise win. Light theme only: chosen explicitly, or by default on a light system. */
+[data-theme="caramellatte"] {
+  --color-primary: oklch(38% 0.065 45) !important; /* espresso brown, ~#5f3624 */
+  --color-primary-content: oklch(97% 0.02 80) !important; /* warm cream text on it */
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --color-primary: oklch(38% 0.065 45) !important;
+    --color-primary-content: oklch(97% 0.02 80) !important;
+  }
+}
 /* Theme fade lives on <body>, not <html>: daisyUI drives the root element's
    own background/transition while a modal is open (see base/rootscrollgutter.css).
    Overriding :root there desyncs its gradient from its color on modal close. */
@@ -12,4 +28,47 @@ body {
   transition:
     background-color 0.3s ease,
     color 0.3s ease;
+}
+
+/* Tailwind v4 gives buttons the default arrow cursor. Bring back the pointing hand for
+   anything clickable (DaisyUI's .btn already does this; our custom buttons don't). */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+}
+
+/* Primary buttons (Sign in, Create account, Save…) respond the same way everywhere:
+   a small lift and a soft shadow on hover, and they settle back down when pressed.
+   Matches the Google/GitHub buttons. Only on devices that can hover (not phones). */
+.btn-primary {
+  transition:
+    translate 0.15s ease,
+    box-shadow 0.25s ease, /* trails the lift a little, like a real shadow spreading */
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+/* DaisyUI's button shadow is [inner highlight, shadow, shadow]. To animate, our hover
+   shadow must keep those same layers in the same order and ADD ours at the end.
+   (Swapping in a different shape, e.g. dropping the inset layer, can't be animated,
+   so the browser just snaps to it.) */
+@media (hover: hover) {
+  .btn-primary:not(:disabled):hover {
+    translate: 0 -1px;
+    box-shadow:
+      0 0.5px 0 0.5px oklch(100% 0 0 / calc(var(--depth) * 6%)) inset,
+      var(--btn-shadow),
+      0 8px 18px -6px color-mix(in oklab, var(--color-primary) 60%, transparent);
+  }
+}
+/* Pressed: back down, and the extra shadow shrinks to nothing (same layer shape) */
+.btn-primary:not(:disabled):active {
+  translate: 0 0;
+  box-shadow:
+    0 0.5px 0 0.5px oklch(100% 0 0 / calc(var(--depth) * 6%)) inset,
+    var(--btn-shadow),
+    0 0 0 0 transparent;
 }

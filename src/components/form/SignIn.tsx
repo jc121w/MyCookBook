@@ -5,9 +5,11 @@ import { useForm, SubmitHandler } from "react-hook-form";
 
 import { useRouter } from "next/navigation";
 
-import { signIn, signInSocial } from "@/lib/actions/auth-actions";
+import { signIn } from "@/lib/actions/auth-actions";
 import { auth } from "@/lib/auth";
 import Link from "next/link";
+import { AuthCard, AuthField } from "./AuthCard";
+import { SocialButtons } from "./SocialButtons";
 
 type FormInputPost = {
   email: string;
@@ -36,77 +38,67 @@ const SignIn = () => {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="m-auto mt-32 flex w-fit flex-col gap-5 border bg-slate-200 p-5"
+    <AuthCard
+      title="Welcome back"
+      subtitle="Sign in to view your collection."
+      footer={
+        <>
+          New here?{" "}
+          <Link href="/sign-up" className="link link-hover font-medium">
+            Create an account
+          </Link>
+        </>
+      }
     >
-      <div>
-        <label className="input input-bordered flex items-center gap-2">
-          <Mail />
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+        <AuthField
+          label="Email"
+          icon={<Mail />}
+          error={errors.email && "Enter your email"}
+        >
           <input
             type="email"
             className="grow"
-            placeholder="Email"
-            {...register("email", {
-              required: true,
-            })}
+            placeholder="you@example.com"
+            autoComplete="email"
+            {...register("email", { required: true })}
           />
-        </label>{" "}
-        {errors.email && (
-          <span className="prose text-red-600">{errors.email?.message}</span>
-        )}
-      </div>
-      <div>
-        <label className="input input-bordered flex items-center gap-2">
-          <RectangleEllipsis />
+        </AuthField>
+        <AuthField
+          label="Password"
+          icon={<RectangleEllipsis />}
+          error={
+            errors.password?.message ||
+            (errors.password && "Enter your password")
+          }
+        >
           <input
             type="password"
             className="grow"
-            placeholder="Password"
+            placeholder="••••••••"
+            autoComplete="current-password"
             {...register("password", {
               required: true,
-
               minLength: {
                 value: 8,
                 message: "Password must be at least 8 characters",
               },
             })}
           />
-        </label>
-        {errors.password && (
-          <span className="text-red-600">{errors.password?.message}</span>
-        )}
-      </div>
-      <div className="flex flex-col gap-5">
-        <button type="submit" className={`btn btn-neutral w-full`}>
-          Sign In
-        </button>
+        </AuthField>
+        {error.length > 0 && <p className="text-error text-sm">{error}</p>}
         <button
-          type="button"
-          onClick={async () => await signInSocial("google")}
-          className={`btn btn-neutral w-full`}
+          type="submit"
+          className="btn btn-primary mt-1 w-full font-serif"
         >
-          Sign In with Google
+          Sign in
         </button>
-        <button
-          type="button"
-          onClick={async () => await signInSocial("github")}
-          className={`btn btn-neutral w-full`}
-        >
-          Sign In with Github
-        </button>
-      </div>
-      <div className="flex flex-col items-center gap-5">
-        <div className="m-auto h-[2px] w-9/12 bg-slate-500"></div>{" "}
-        <Link
-          href="/sign-up"
-          className="text-blue-800 underline transition-transform duration-200 hover:scale-110"
-        >
-          Don&apos;t have an account?
-        </Link>
-        {error.length > 0 && <span className="text-red-600">{error}</span>}
-      </div>
-    </form>
+      </form>
+
+      <div className="divider my-0 text-xs opacity-60">or</div>
+
+      <SocialButtons />
+    </AuthCard>
   );
 };
 
