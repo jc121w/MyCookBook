@@ -16,6 +16,7 @@ export async function GET() {
     const userId = session.user.id;
 
     const recipes = await prisma.recipe.findMany({
+      include: { _count: { select: { entries: true } } },
       where: {
         userId: userId,
       },

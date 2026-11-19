@@ -1,4 +1,19 @@
 // types.ts
+import type { Prisma } from "@prisma/client";
+
+// ── Journal ──────────────────────────────────────────────
+// A "book" is a Recipe row. These types describe query results that include relations.
+// `import type` is erased at compile time, so client components can import this file safely.
+
+// GET /api/library → each recipe plus how many entries it has
+export type BookWithCount = Prisma.RecipeGetPayload<{
+  include: { _count: { select: { entries: true } } };
+}>;
+
+// GET /api/library/[recipeId] → one recipe plus its entries
+export type BookWithEntries = Prisma.RecipeGetPayload<{
+  include: { entries: true };
+}>;
 export interface Nutrition {
   nutrients: {
     amount: number;

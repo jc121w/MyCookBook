@@ -1,36 +1,30 @@
 "use client";
-import { BackButton } from "@/components/BackButton";
 import { useRef } from "react";
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Recipe as DbRecipe } from "@prisma/client";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
-import { Recipe } from "../types";
+import type { BookWithCount } from "../types";
 import { RecipeCardSkeleton } from "@/components/recipes/RecipeCardSkeleton";
 import { grid } from "@/lib/utils/recipe";
-import Link from "next/link";
 import RedirectMessage from "@/components/form/RedirectMessage";
-import { SubmitHandler, useFieldArray, useForm } from "react-hook-form";
 import RecipeForm from "@/components/form/RecipeForm";
+import { BookShelf } from "@/components/journal/BookShelf";
 
 const Library = () => {
-  const modalRef = useRef<HTMLDialogElement>(null);
-
   // fetch all recips
   const {
     data: recipes,
     isLoading: isLoadingRecipes,
     error: recipesError,
-  } = useQuery<DbRecipe[]>({
+  } = useQuery<BookWithCount[]>({
     queryKey: ["recipes"],
     queryFn: async () => {
-      const response = await axios.get("/api");
-      console.log(response.data);
+      const response = await axios.get("/api/library");
       return response.data;
     },
   });
-
+  const modalRef = useRef<HTMLDialogElement>(null);
   if (isLoadingRecipes) {
     return (
       <div className={grid}>
@@ -41,8 +35,9 @@ const Library = () => {
     );
   }
   if (recipesError) {
-    <RedirectMessage error={recipesError} />;
+    return <RedirectMessage error={recipesError} />;
   }
+
   return (
     <div className="m-auto flex max-w-4xl flex-col items-start justify-start gap-10">
       <div className="mx-auto max-w-6xl px-4 py-10">
@@ -57,19 +52,7 @@ const Library = () => {
           </form>
         </dialog>
       </div>
-
-      <div className={`mt-10 ${grid}`}>
-        {recipes?.map((elem, index) => (
-          <RecipeCard
-            key={elem.id}
-            recipe={elem}
-            href={`/recipe/${elem.id}`}
-            onClick={() =>
-              localStorage.setItem(`recipe_${elem.id}`, JSON.stringify(elem))
-            }
-          />
-        ))}
-      </div>
+      <BookShelf books={recipes ?? []} />
     </div>
   );
 };

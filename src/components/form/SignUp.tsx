@@ -37,7 +37,6 @@ const SignUp = () => {
     error,
   } = useMutation({
     mutationFn: async (newUserData: FormInputPost) => {
-      //   return axios.post("/api/user", newUserData);
       const result = await signUp(
         newUserData.email,
         newUserData.password,

@@ -14,7 +14,7 @@ export const SaveButton = (props: { recipeid: String; recipe: Recipe }) => {
     isSuccess,
   } = useMutation({
     mutationFn: (newRecipe: Recipe) => {
-      return axios.post("/api", newRecipe);
+      return axios.post("/api/library", newRecipe);
     },
     onError: (error) => {
       console.error("Error adding recipe:", error);

@@ -46,7 +46,7 @@ model Session {
 }
 
 model Account {
-  id                    String   @id
+  id                    String    @id
   accountId             String
   providerId            String
   userId                String
@@ -78,28 +78,42 @@ model Verification {
 }
 
 model Recipe {
-  id              Int    @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   edamamId        String?
-  userId          String   
-  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   label           String
   image           String?
   source          String
   yield           Int
   url             String?
   calories        Float?
-  dietLabels      String[] @default([])
-  healthLabels    String[] @default([])
-  ingredientLines String[] @default([])
-  dishType        String[] @default([])
-  cuisineType     String[] @default([])
-  mealType        String[] @default([])
+  dietLabels      String[]      @default([])
+  healthLabels    String[]      @default([])
+  ingredientLines String[]      @default([])
+  dishType        String[]      @default([])
+  cuisineType     String[]      @default([])
+  mealType        String[]      @default([])
   totalTime       Int
   totalNutrients  Json?
   raw             Json?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  entries         RecipeEntry[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  @@unique([userId,edamamId])
+  @@unique([userId, edamamId])
   @@index([userId])
+}
+
+model RecipeEntry {
+  id        Int      @id @default(autoincrement())
+  recipeId  Int
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  cookedOn  DateTime @db.Date
+  notes     String?
+  photoUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recipeId])
 }
