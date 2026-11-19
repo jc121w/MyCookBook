@@ -1,8 +1,9 @@
-import LandingPage from "./home/page";
+import { auth } from "@/lib/auth";
+import { Landing } from "@/components/Landing";
+import { headers } from "next/headers";
+
+// The home page: the pitch, with buttons that depend on whether you're signed in
 export default async function Home() {
-  return (
-    <main className="m-auto flex h-screen max-w-4xl flex-col items-center gap-10">
-      <LandingPage />
-    </main>
-  );
+  const session = await auth.api.getSession({ headers: await headers() });
+  return <Landing signedIn={!!session} />;
 }
