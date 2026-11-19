@@ -1,9 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "motion/react";
 
 export const DownArrow = () => {
-  const downButtonVariants = {
+  const downButtonVariants: Variants = {
+    initial: { y: 0, opacity: 0 },
     animateDown: {
       y: 70,
       opacity: [0, 0.1, 0.3, 0.5, 0.7, 1, 1, 0],
@@ -14,7 +15,6 @@ export const DownArrow = () => {
         times: [0, 0.2, 0.4, 0.5, 0.6, 0.7, 0.9, 1],
         duration: 2,
       },
-      initial: { y: 0, opacity: 0 },
     },
   };
   return (
