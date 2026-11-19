@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
-import { deleteUnusedFiles } from "@/lib/uploadthingServer";
+import { cleanFileKey, deleteUnusedFiles } from "@/lib/uploadthingServer";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -58,6 +58,8 @@ export async function PATCH(
     rating?: number | null;
     notes?: string | null;
     cookedOn?: Date;
+    photoUrl?: string | null;
+    photoKey?: string | null;
   } = {};
 
   if ("rating" in body) {
@@ -99,17 +101,49 @@ export async function PATCH(
     data.cookedOn = date;
   }
 
+  if ("photoUrl" in body) {
+    // A new photo (its UploadThing URL + key), or null to remove the photo
+    if (body.photoUrl === null) {
+      data.photoUrl = null;
+      data.photoKey = null;
+    } else if (
+      typeof body.photoUrl === "string" &&
+      body.photoUrl.startsWith("https://")
+    ) {
+      data.photoUrl = body.photoUrl;
+      data.photoKey = cleanFileKey(body.photoKey);
+    } else {
+      return NextResponse.json({ error: "Invalid photo URL" }, { status: 400 });
+    }
+  }
+
   if (Object.keys(data).length === 0)
     return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
 
-  // updateMany lets us filter by ownership (through the recipe) in the same query.
-  // count 0 → the entry doesn't exist or isn't yours → 404.
-  const { count } = await prisma.recipeEntry.updateMany({
+  // Ownership through the recipe (an entry has no userId). Someone else's → 404.
+  // We also need the current photo, to clean it up if it's being replaced.
+  const existing = await prisma.recipeEntry.findFirst({
     where: { id: entryId, recipe: { userId: session.user.id } },
-    data,
+    select: { id: true, photoUrl: true, photoKey: true },
   });
-  if (count === 0)
+  if (!existing)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json({ id: entryId, ...data });
+  const updated = await prisma.recipeEntry.update({
+    where: { id: existing.id },
+    data,
+  });
+
+  // Photo replaced or removed → delete the old file (if it was ours and nothing else uses it)
+  if (
+    "photoUrl" in data &&
+    existing.photoUrl &&
+    existing.photoUrl !== updated.photoUrl
+  ) {
+    await deleteUnusedFiles([
+      { key: existing.photoKey, url: existing.photoUrl },
+    ]);
+  }
+
+  return NextResponse.json(updated);
 }

@@ -20,7 +20,10 @@ export async function GET(
 
   const recipe = await prisma.recipe.findFirst({
     where: { id: recipeId, userId: session.user.id }, // only if it's mine
-    include: { entries: { orderBy: { cookedOn: "desc" } } }, // newest first
+    include: {
+      // Newest first: by the day cooked, then (same day) the one logged most recently
+      entries: { orderBy: [{ cookedOn: "desc" }, { id: "desc" }] },
+    },
   });
   if (!recipe)
     return NextResponse.json({ error: "Not found" }, { status: 404 });

@@ -4,10 +4,12 @@ import type { RecipeEntry } from "@prisma/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { ChevronLeft, PenLine } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useAnimate } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { ConfirmDelete } from "./ConfirmDelete";
 import { StarInput, Stars } from "./StarRating";
+import { PhotoPicker } from "@/components/form/PhotoPicker";
+import { useUploadThing } from "@/lib/uploadthing";
 
 const EASE = [0.4, 0, 0.2, 1] as const;
 // The entry → full-page grow, and back. Same timing both ways, no bounce.
@@ -25,13 +27,17 @@ type JournalListProps = {
   isLoading: boolean;
   onOpen: (entryId: number) => void;
   onAdd: () => void;
+  justAdded?: number | null; // a brand-new entry: its card drops in
 };
+
+export const DROP_IN_MS = 550; // how long a new card takes to drop in
 
 export function JournalList({
   entries,
   isLoading,
   onOpen,
   onAdd,
+  justAdded = null,
 }: JournalListProps) {
   if (isLoading) {
     return (
@@ -88,12 +94,45 @@ export function JournalList({
             )}
             {monthEntries.map((entry) => (
               <li key={entry.id}>
-                <EntryCard entry={entry} onOpen={() => onOpen(entry.id)} />
+                <DropIn active={entry.id === justAdded}>
+                  <EntryCard entry={entry} onOpen={() => onOpen(entry.id)} />
+                </DropIn>
               </li>
             ))}
           </ul>
         </section>
       ))}
+    </div>
+  );
+}
+
+// A brand-new card drops onto the page from above, settling with a little bounce.
+// Played imperatively on mount: the book's page sits in an AnimatePresence with
+// initial={false}, which would make a declarative `initial` here skip the animation.
+function DropIn({
+  active,
+  children,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  const [scope, animate] = useAnimate<HTMLDivElement>();
+  useEffect(() => {
+    if (!active) return;
+    animate(
+      scope.current,
+      { opacity: [0, 1], y: [-28, 0], scale: [1.12, 1] },
+      {
+        duration: DROP_IN_MS / 1000,
+        ease: [0.34, 1.4, 0.64, 1],
+        opacity: { duration: 0.2, ease: "easeOut" },
+      },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on mount
+  }, []);
+  return (
+    <div ref={scope} style={active ? { opacity: 0 } : undefined}>
+      {children}
     </div>
   );
 }
@@ -152,6 +191,32 @@ function PhotoCorners({ size = 14 }: { size?: number }) {
 const CAPTION = "mt-2 flex h-[52px] w-full flex-col gap-0.5 px-1 text-left";
 
 // The next page: a dashed print-shaped spot, dated today
+const NEW_ENTRY_ID = "new-entry";
+
+// The new-entry form's page: grows from the "New entry" card and shrinks back into it
+// (Save or Cancel), the same way an entry opens and closes
+export function NewEntrySheet({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      layoutId={NEW_ENTRY_ID}
+      transition={{ duration: 0.35, ease: EASE, ...GROW }}
+      className="bg-base-100 absolute inset-0 z-10"
+      style={{ borderRadius: 0 }}
+    >
+      {/* The form fades in after the box starts growing, and out before it shrinks,
+          so it never looks squashed */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.2 } }}
+        exit={{ opacity: 0, transition: { duration: 0.1 } }}
+        className="h-full"
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function NewEntryCard({ onClick }: { onClick: () => void }) {
   // Today in the user's own time zone (this is "now", not a stored date, so no UTC)
   const today = new Date().toLocaleDateString(undefined, {
@@ -160,9 +225,11 @@ function NewEntryCard({ onClick }: { onClick: () => void }) {
     day: "numeric",
   });
   return (
-    <button
+    <motion.button
       type="button"
       onClick={onClick}
+      layoutId={NEW_ENTRY_ID} // same id as NewEntrySheet → the form grows from this card
+      transition={GROW}
       className="border-base-content/20 text-base-content/60 hover:border-primary hover:text-base-content hover:bg-base-200/40 flex w-full flex-col rounded-sm border-2 border-dashed p-1.5 pb-2.5 transition-colors"
     >
       <span className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1.5">
@@ -174,7 +241,7 @@ function NewEntryCard({ onClick }: { onClick: () => void }) {
       <span className={`${CAPTION} items-center justify-center`}>
         <span className="font-serif text-xs italic opacity-70">{today}</span>
       </span>
-    </button>
+    </motion.button>
   );
 }
 
@@ -197,31 +264,7 @@ function EntryCard({
       aria-label={`Entry from ${fmt(entry.cookedOn, { month: "long", day: "numeric", year: "numeric" })}`}
     >
       <span className="relative block aspect-[4/3] w-full">
-        {entry.photoUrl ? (
-          <img
-            src={entry.photoUrl}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          // No photo: a soft printed card with the date big and your words on it
-          <span
-            className="flex h-full w-full flex-col items-center justify-center gap-1 px-3 text-center"
-            style={{ background: CARD_TINTS[entry.id % CARD_TINTS.length] }}
-          >
-            <span className="font-serif text-3xl leading-none font-bold opacity-80">
-              {fmt(entry.cookedOn, { day: "numeric" })}
-            </span>
-            <span className="text-[10px] tracking-[0.2em] uppercase opacity-60">
-              {fmt(entry.cookedOn, { month: "short" })}
-            </span>
-            {entry.notes && (
-              <span className="mt-1 line-clamp-2 font-serif text-[11px] leading-snug italic opacity-75">
-                &ldquo;{entry.notes}&rdquo;
-              </span>
-            )}
-          </span>
-        )}
+        <Thumbnail entry={entry} />
         <PhotoCorners />
       </span>
 
@@ -246,6 +289,40 @@ function EntryCard({
         )}
       </span>
     </motion.button>
+  );
+}
+
+// The card's picture: your photo, or (no photo) a soft tinted card with the date big
+// and your words. Fills whatever box it's in, cropping rather than stretching.
+function Thumbnail({ entry }: { entry: RecipeEntry }) {
+  return (
+    <>
+      {entry.photoUrl ? (
+        <img
+          src={entry.photoUrl}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        // No photo: a soft printed card with the date big and your words on it
+        <span
+          className="flex h-full w-full flex-col items-center justify-center gap-1 px-3 text-center"
+          style={{ background: CARD_TINTS[entry.id % CARD_TINTS.length] }}
+        >
+          <span className="font-serif text-3xl leading-none font-bold opacity-80">
+            {fmt(entry.cookedOn, { day: "numeric" })}
+          </span>
+          <span className="text-[10px] tracking-[0.2em] uppercase opacity-60">
+            {fmt(entry.cookedOn, { month: "short" })}
+          </span>
+          {entry.notes && (
+            <span className="mt-1 line-clamp-2 font-serif text-[11px] leading-snug italic opacity-75">
+              &ldquo;{entry.notes}&rdquo;
+            </span>
+          )}
+        </span>
+      )}
+    </>
   );
 }
 
@@ -366,11 +443,35 @@ function EntryEditor({
     new Date(entry.cookedOn).toISOString().slice(0, 10),
   );
   const [notes, setNotes] = useState(entry.notes ?? "");
+  const [rating, setRating] = useState<number | null>(entry.rating);
+  // Photo: a newly picked file, and the photo already saved (cleared by "Remove")
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [saved, setSaved] = useState({
+    url: entry.photoUrl,
+    key: entry.photoKey,
+  });
+  const { startUpload } = useUploadThing("entryPhoto");
   const today = new Date().toLocaleDateString("en-CA"); // local today, for max
 
   const save = useMutation({
-    mutationFn: () =>
-      axios.patch(`/api/entries/${entry.id}`, { cookedOn, notes }),
+    mutationFn: async () => {
+      // A new photo goes straight to UploadThing first; otherwise keep (or drop) the saved one
+      let photoUrl = saved.url;
+      let photoKey = saved.key;
+      if (photo) {
+        const uploaded = await startUpload([photo]);
+        photoUrl = uploaded?.[0]?.ufsUrl ?? null;
+        photoKey = uploaded?.[0]?.key ?? null;
+        if (!photoUrl) throw new Error("The photo didn't upload. Try again.");
+      }
+      return axios.patch(`/api/entries/${entry.id}`, {
+        cookedOn,
+        notes,
+        rating,
+        photoUrl,
+        photoKey,
+      });
+    },
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({
@@ -397,6 +498,24 @@ function EntryEditor({
         />
       </label>
 
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium">Rating</span>
+        <StarInput value={rating} onChange={setRating} size={26} />
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium">
+          Photo <span className="font-normal opacity-50">(optional)</span>
+        </span>
+        <PhotoPicker
+          file={photo}
+          onChange={setPhoto}
+          maxMb={8}
+          currentUrl={saved.url}
+          onClearCurrent={() => setSaved({ url: null, key: null })}
+        />
+      </div>
+
       <label className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">Notes</span>
         <textarea
@@ -410,7 +529,11 @@ function EntryEditor({
       </label>
 
       {save.isError && (
-        <p className="text-error text-sm">Couldn&apos;t save. Try again.</p>
+        <p className="text-error text-sm">
+          {save.error instanceof Error && !axios.isAxiosError(save.error)
+            ? save.error.message
+            : "Couldn't save. Try again."}
+        </p>
       )}
 
       <div className="flex justify-end gap-2">
@@ -427,7 +550,10 @@ function EntryEditor({
           disabled={save.isPending || !cookedOn || cookedOn > today}
         >
           {save.isPending ? (
-            <span className="loading loading-spinner loading-sm" />
+            <>
+              <span className="loading loading-spinner loading-sm" />
+              {photo ? "Uploading photo…" : "Saving…"}
+            </>
           ) : (
             "Save"
           )}

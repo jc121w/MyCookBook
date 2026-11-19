@@ -92,8 +92,14 @@ export function CoverPage({ book, entries, isLoading }: CoverPageProps) {
             ))}
           </div>
 
-          <p className="max-w-[22rem] font-serif text-[15px] leading-relaxed opacity-80">
-            {story.sentences.join(" ")}
+          {/* The story as a paragraph; the first date and the rating are in bold */}
+          <p className="max-w-[22rem] font-serif text-[15px] leading-relaxed">
+            {story.sentences.map((text, i) => (
+              <span key={i}>
+                {i > 0 && " "}
+                <Emphasis text={text} />
+              </span>
+            ))}
           </p>
 
           {lastNote?.notes && (
@@ -123,6 +129,21 @@ function excerpt(text: string, max: number) {
   if (clean.length <= max) return clean;
   return (
     clean.slice(0, clean.lastIndexOf(" ", max)).replace(/[,.;:!?-]+$/, "") + "…"
+  );
+}
+
+// "First made on **November 19**." → the starred part in bold
+function Emphasis({ text }: { text: string }) {
+  return text.split("**").map((part, i) =>
+    i % 2 === 1 ? (
+      <strong key={i} className="font-bold">
+        {part}
+      </strong>
+    ) : (
+      <span key={i} className="opacity-80">
+        {part}
+      </span>
+    ),
   );
 }
 
@@ -172,11 +193,12 @@ function journalStory(book: BookWithCount, entries: RecipeEntry[]) {
   ].filter((h): h is Highlight => Boolean(h));
 
   // Sentences, written the way you'd say them
+  // **double asterisks** mark the part shown in bold
   const sentences: string[] = [];
   if (cooks === 1) {
-    sentences.push(`You made this on ${longDate(newest)}, ${ago(newest)}.`);
+    sentences.push(`You made this on **${longDate(newest)}**, ${ago(newest)}.`);
   } else {
-    sentences.push(`First made on ${longDate(oldest)}.`);
+    sentences.push(`First made on **${longDate(oldest)}**.`);
     sentences.push(`Last cooked ${shortDate(newest)}, ${ago(newest)}.`);
     const gap = (newest - oldest) / DAY / (cooks - 1);
     sentences.push(`You come back to it ${rhythm(gap)}.`);
@@ -187,11 +209,11 @@ function journalStory(book: BookWithCount, entries: RecipeEntry[]) {
     .map((e) => e.rating)
     .filter((r): r is number => r != null);
   if (ratings.length === 1) {
-    sentences.push(`You gave it ${ratings[0].toFixed(1)} out of 5.`);
+    sentences.push(`You gave it **${ratings[0].toFixed(1)}** out of 5.`);
   } else if (ratings.length > 1) {
     const avg = ratings.reduce((sum, r) => sum + r, 0) / ratings.length;
     sentences.push(
-      `On average you rate it ${(Math.round(avg * 10) / 10).toFixed(1)} out of 5.`,
+      `On average you rate it **${(Math.round(avg * 10) / 10).toFixed(1)}** out of 5.`,
     );
   }
 

@@ -11,7 +11,8 @@ import { playKnifeSequence } from "@/lib/sounds";
 
 // ── Timeline (seconds) ──
 const HOLD_TIME = 0.18; // the held breath before the big slash
-const CURTAIN_IN = 0.2;
+const CURTAIN_IN = 0.45; // the veil eases in gently…
+const LEAD = 0.2; // …and everything after it waits this much longer, so the first slash still lands on a dark veil
 // One continuous flight. [start, travel] for each slash:
 //   1. top-right → bottom-left
 //      (swoops back up the left side, flipping, to the top-left)
@@ -20,17 +21,17 @@ const CURTAIN_IN = 0.2;
 //       way, comes down at the middle-left; stops dead and cocks back)
 //   3. left → right, straight across the middle: the big one
 const SLASHES: [number, number][] = [
-  [0.25, 0.26],
-  [0.92, 0.26],
-  [2.6, 0.34],
+  [LEAD + 0.25, 0.26],
+  [LEAD + 0.92, 0.26],
+  [LEAD + 2.6, 0.34],
 ];
 const SPIN = SLASHES[2][0] - HOLD_TIME - (SLASHES[1][0] + SLASHES[1][1]); // the spinning arc over the top, from the end of slash 2
 const HOLD = HOLD_TIME; // …then stops dead and cocks back for a split second
 const SPIN_AT = SLASHES[2][0] - HOLD - SPIN; // when the spin starts
 const IMPACT = SLASHES[2][0] + SLASHES[2][1] * 0.6; // when slash 3 bites through the middle
-const OPEN_AT = 3.2; // the curtain splits along the middle cut
+const OPEN_AT = LEAD + 3.2; // the curtain splits along the middle cut
 const OPEN_FOR = 0.6;
-const DONE_AFTER = 4250; // ms: everything has faded
+const DONE_AFTER = LEAD * 1000 + 4250; // ms: everything has faded
 
 const EASE_IN: Easing = [0.55, 0, 0.9, 0.4]; // a slash starts fast and keeps accelerating
 const SPIN_EASE: Easing = [0.6, 0, 0.95, 0.5]; // the spin starts lazy and winds up faster and faster
@@ -112,7 +113,7 @@ export function KnifeCelebration({ onDone }: { onDone: () => void }) {
             transition={{
               duration: total,
               times: [0, CURTAIN_IN / total, OPEN_AT / total, 1],
-              ease: ["easeOut", "linear", SPLIT_EASE],
+              ease: ["easeInOut", "linear", SPLIT_EASE],
             }}
           />
         ))}
