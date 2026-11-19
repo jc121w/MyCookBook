@@ -1,162 +1,97 @@
-# 🍳 [MyCookBook]
+# 📖 MyCookBook
 
-> A full-stack web app for building recipes and designing weekly meal plans.
+> A cooking journal: every dish you make, in one book.
 
-![License](https://img.shields.io/badge/license-MIT-blue)
+**MyCookBook is a journal for the recipes you cook.** It's built for people who love making, eating and photographing good food. Every recipe is a book on your shelf, sorted your way and with you on any device. Each time you cook it, you add a page: a photo, a rating, and notes on what went well and what didn't. Over time you can look back and watch your cooking grow. The mission is simple: to make cooking something you want to keep coming back to.
 
----
-
-## 📖 Overview
-
-Recipe journal for people to record the food that they eat and make
-Goal is a nice and organized way for people to journal their cooking help them improve and see the recipes they make
-Each recipe comes with a set of journal entries about that days attempt at cooking it problems good bad...
-Mission is to encourage people to get into cooking and view the recipes they make and grow
-
-Notes after key implementation features
-
-- Each Recipe is represented as a Journal
-- Front page is the recipe
-- Each page represents a new journal entry with a photo of that days creation and details
-- The library resembles a libary of sorts, I want to go for a theme
-- each entry has an animated page flip and design similar to book journal
+🔗 **Live:** [my-cook-book-three.vercel.app](https://my-cook-book-three.vercel.app/)
 
 ## ✨ Features
 
-- 🥗 **Recipe builder** — create, edit, and tag recipes with ingredients, steps, and nutrition
-- 🗓️ **Meal plan designer** — drag recipes into a weekly calendar
-- 🛒 **Auto shopping list** — generated from the ingredients in your plan
-- 🔍 **Search & filters** — filter by tag, prep time, dietary needs
-- 👤 **Accounts & auth** — sign up / log in to save personal recipes and plans
+- **Find recipes** from thousands on Edamam, with meal, cuisine and diet filters, or write your own.
+- **A bookshelf library.** Each recipe is a book, shelved by dish, cuisine or meal. Drag a book to the trash to remove it.
+- **Open a book** to see its cover, the recipe (ingredients, steps, nutrition), and its journal.
+- **Journal entries** for every cook: date, photo, notes, and a star rating (half stars, or exact to 0.1).
+- **Edit anything:** add your own steps or photo to any recipe; change an entry's date or notes later.
+- **Profile stats:** meals cooked, time at the stove, your favorite recipe, what's on repeat, and your average meal's nutrition.
 
-## 🖼️ Demo & Screenshots
+## 🖼️ Screenshots
 
-<!-- For a visual app, this is one of the highest-value sections.
-     A live demo link + 1–3 screenshots or a short GIF beats paragraphs of text. -->
+<!-- Add images to docs/screenshots/ and they'll show here -->
 
-🔗 **Live demo:** [https://my-cook-book-three.vercel.app/](https://your-app-url.com)
+| Your shelf | An open book | The journal |
+| --- | --- | --- |
+| ![Shelf](./docs/screenshots/shelf.png) | ![Book](./docs/screenshots/book.png) | ![Journal](./docs/screenshots/journal.png) |
 
-![Recipe builder screenshot](./docs/screenshots/recipe-builder.png)
+## 🛠️ Tech
 
-## 🛠️ Tech Stack
+Next.js (App Router) · TypeScript · Prisma + PostgreSQL (Neon) · Better Auth · TanStack Query · Tailwind CSS + DaisyUI · Motion · UploadThing · Edamam API · Vercel
 
-| Layer     | Technology           |
-| --------- | -------------------- |
-| Framework | Next.js (App Router) |
-| Language  | TypeScript           |
-| ORM       | Prisma               |
-| Database  | PostgreSQL           |
-| Auth      | Better Auth          |
-| Styling   | e.g. Tailwind CSS    |
-| Hosting   | e.g. Vercel          |
+## 🚀 Run it locally
 
-<!-- Next.js is full-stack: pages AND API/server logic live in one app.
-     There is no separate backend server — Prisma + Better Auth run inside it. -->
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js >= 20
-- npm (or pnpm / yarn)
-- A PostgreSQL database — either running locally or a hosted connection string
-  (e.g. Neon, Supabase, Railway)
-
-### Installation
+You'll need **Node.js 20+** and a **PostgreSQL** database (local, or hosted like [Neon](https://neon.tech)).
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/your-username/project-name.git
-cd project-name
-
-# 2. Install dependencies
+git clone https://github.com/jc121w/MyCookBook.git
+cd MyCookBook
 npm install
+
+cp .env.example .env      # then fill in the values (see below)
+npx prisma migrate dev    # create the database tables
+npm run dev               # → http://localhost:3000
 ```
 
-### Environment Variables
+### Environment variables
 
-Create a `.env` file in the project root. Document every variable — missing env
-vars are the #1 cause of "it won't run on my machine."
+| Variable | What it's for |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `BETTER_AUTH_SECRET` | any long random string (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | your app's URL, e.g. `http://localhost:3000` |
+| `EDAMAM_APP_ID`, `EDAMAM_APP_KEY`, `EDAMAM_USER_ID` | recipe search ([developer.edamam.com](https://developer.edamam.com)) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | "Sign in with Google" (optional) |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` | "Sign in with GitHub" (optional) |
+| `UPLOADTHING_TOKEN` | photo uploads ([uploadthing.com](https://uploadthing.com), V7 token) |
 
-```env
-# PostgreSQL connection string (used by Prisma)
-DATABASE_URL="postgresql://user:password@localhost:5432/mealplanner"
+> On Vercel, paste values **without quotes**, and redeploy after changing them.
 
-# Better Auth
-BETTER_AUTH_SECRET="run: openssl rand -base64 32 to generate one"
-BETTER_AUTH_URL="http://localhost:3000"
-```
-
-> 💡 Commit a `.env.example` with blank/placeholder values so others know what's
-> required, without leaking your real secrets. Keep `.env` in `.gitignore`.
-
-### Database Setup
-
-Prisma turns your schema into real database tables:
+### Handy commands
 
 ```bash
-# Generate the Prisma client from your schema
-npx prisma generate
-
-# Create the tables in your database (runs migrations)
-npx prisma migrate dev
+npx prisma studio          # browse and edit your data in the browser
+npx prisma migrate deploy  # apply committed migrations to a production database
 ```
 
-> 💡 `npx prisma studio` opens a browser GUI to view and edit your data — handy
-> for debugging.
+> After any `prisma migrate`, restart `npm run dev` so it picks up the new database client.
 
-### Running the App
-
-```bash
-npm run dev
-```
-
-The app runs at `http://localhost:3000`.
-
-## 📁 Project Structure
+## 📁 Where things live
 
 ```
-project-name/
-├── prisma/
-│   └── schema.prisma      # Database models & schema (the source of truth)
-├── src/
-│   ├── app/               # Next.js App Router
-│   │   ├── api/           # API route handlers (your "backend" endpoints)
-│   │   ├── (routes)/      # Page-level views
-│   │   └── layout.tsx     # Root layout
-│   ├── components/        # Reusable UI components
-│   └── lib/
-│       ├── auth.ts        # Better Auth configuration
-│       └── prisma.ts      # Prisma client instance
-├── public/                # Static assets (images, icons)
-├── .env                   # Environment variables (not committed)
-└── package.json
+prisma/schema.prisma        Recipe (a book) and RecipeEntry (a journal page)
+src/app/
+  library/                  the bookshelf
+  search/                   recipe search
+  profile/                  your stats
+  api/                      route handlers (below)
+src/components/journal/     shelf, book, pages, entry form, stars
+src/lib/                    auth, database, Edamam, validation, stats
 ```
 
-<!-- Some Next.js setups skip the `src/` folder and put `app/` at the root.
-     Adjust this tree to match yours. -->
+## 📡 API routes
 
-## 📡 Key Routes / API
+| Method | Route | What it does |
+| --- | --- | --- |
+| GET | `/api/recipes?q=` | search Edamam (with `page`, `mealType`, `cuisineType`, `diet`) |
+| GET · POST | `/api/library` | your books · add an Edamam recipe to your shelf |
+| GET · PATCH · DELETE | `/api/library/:id` | one book with its entries · edit it · remove it |
+| POST | `/api/recipes/custom` | create your own recipe |
+| POST | `/api/entries` | log a cook |
+| PATCH · DELETE | `/api/entries/:id` | edit an entry (rating, notes, date) · delete it |
 
-<!-- Optional. A short table of the main API routes under app/api. -->
+Every route checks that you're signed in and that the book or entry is yours.
 
-| Method | Endpoint         | Description      |
-| ------ | ---------------- | ---------------- |
-| GET    | `/api/recipes`   | List all recipes |
-| POST   | `/api/recipes`   | Create a recipe  |
-| GET    | `/api/plans/:id` | Get a meal plan  |
+## 🗺️ Ideas for later
 
-## 🗺️ Roadmap
-
-- [ ] Nutrition totals per meal plan
-- [ ] Share plans with other users
-- [ ] Mobile-responsive drag-and-drop
-- <!-- What you'd build next -->
-
-## 📄 License
-
-Distributed under the MIT License. See `LICENSE` for details.
-
-## 📬 Contact
-
-Your Name — [@yourhandle](https://twitter.com/yourhandle) — email@example.com
+- [ ] Your own shelves and tags ("Weeknight", "Holidays")
+- [ ] Share a book with a read-only link
+- [ ] Clean up photos from forms that were cancelled
