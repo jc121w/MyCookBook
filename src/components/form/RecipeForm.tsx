@@ -5,6 +5,7 @@ import axios from "axios";
 import { Plus, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useFieldArray, useForm, type SubmitHandler } from "react-hook-form";
+import type { BookWithCount } from "@/app/types";
 import { PhotoPicker } from "@/components/form/PhotoPicker";
 import {
   CUISINE_TYPES,
@@ -45,14 +46,44 @@ const EMPTY: RecipeFormValues = {
   instructions: [{ value: "" }],
 };
 
+// Editing: turn a saved recipe back into form values
+function valuesFrom(recipe: BookWithCount): RecipeFormValues {
+  const rows = (lines: string[]) =>
+    lines.length > 0 ? lines.map((value) => ({ value })) : [{ value: "" }];
+  return {
+    label: recipe.label,
+    source: recipe.source ?? "",
+    url: recipe.url ?? "",
+    yield: recipe.yield || 1,
+    totalTime: recipe.totalTime || undefined,
+    // Stored for the whole recipe; the form asks per serving
+    caloriesPerServing:
+      recipe.calories != null
+        ? Math.round(recipe.calories / (recipe.yield || 1))
+        : undefined,
+    dishType: recipe.dishType[0] ?? "",
+    cuisineType: recipe.cuisineType[0] ?? "",
+    mealType: recipe.mealType[0] ?? "",
+    ingredientLines: rows(recipe.ingredientLines),
+    instructions: rows(recipe.instructions),
+  };
+}
+
 // Empty number inputs become undefined instead of NaN (NaN would crash the save)
 const toNumber = (v: string) => (v === "" ? undefined : Number(v));
 
 type RecipeFormProps = {
-  onDone: () => void; // close the dialog (after saving or cancelling)
+  onDone: () => void; // close (after saving or cancelling)
+  recipe?: BookWithCount; // pass one to EDIT it; leave out to CREATE
+  variant?: "modal" | "panel"; // inside the create dialog, or inside an open book
 };
 
-export default function RecipeForm({ onDone }: RecipeFormProps) {
+export default function RecipeForm({
+  onDone,
+  recipe,
+  variant = "modal",
+}: RecipeFormProps) {
+  const editing = recipe != null;
   const queryClient = useQueryClient();
   const {
     register,
@@ -60,30 +91,37 @@ export default function RecipeForm({ onDone }: RecipeFormProps) {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<RecipeFormValues>({ defaultValues: EMPTY });
+  } = useForm<RecipeFormValues>({
+    defaultValues: recipe ? valuesFrom(recipe) : EMPTY,
+  });
 
   const ingredients = useFieldArray({ control, name: "ingredientLines" });
   const steps = useFieldArray({ control, name: "instructions" });
 
+  // Photo: a newly picked file, and (when editing) the photo already saved
   const [photo, setPhoto] = useState<File | null>(null);
+  const [savedImage, setSavedImage] = useState({
+    url: recipe?.image ?? null,
+    key: recipe?.imageKey ?? null,
+  });
   const { startUpload } = useUploadThing("recipePhoto");
 
   const save = useMutation({
     mutationFn: async (values: RecipeFormValues) => {
-      // 1. Photo goes straight to UploadThing; we keep only its URL
-      let image: string | null = null;
-      let imageKey: string | null = null;
+      // 1. A new photo goes straight to UploadThing; otherwise keep the saved one (if any)
+      let image = savedImage.url;
+      let imageKey = savedImage.key;
       if (photo) {
         const uploaded = await startUpload([photo]);
         image = uploaded?.[0]?.ufsUrl ?? null;
-        imageKey = uploaded?.[0]?.key ?? null; // needed to delete the file later
+        imageKey = uploaded?.[0]?.key ?? null;
         if (!image) throw new Error("The photo didn't upload. Try again.");
       }
       // 2. Flatten the { value } rows to plain strings and drop empty ones
       const lines = (rows: { value: string }[]) =>
         rows.map((r) => r.value.trim()).filter(Boolean);
 
-      return axios.post("/api/recipes/custom", {
+      const payload = {
         label: values.label,
         source: values.source,
         url: values.url || null,
@@ -97,57 +135,83 @@ export default function RecipeForm({ onDone }: RecipeFormProps) {
         instructions: lines(values.instructions),
         image,
         imageKey,
-      });
+      };
+      return editing
+        ? axios.patch(`/api/library/${recipe.id}`, payload)
+        : axios.post("/api/recipes/custom", payload);
     },
     onSuccess: async () => {
-      // Refetch the shelf so the new book appears, then clear and close
+      // Refetch the shelf: a new book appears, or the open book shows the edits
       await queryClient.invalidateQueries({ queryKey: ["recipes"] });
       close();
     },
   });
 
   function close() {
-    reset(EMPTY);
-    setPhoto(null);
+    if (!editing) {
+      reset(EMPTY);
+      setPhoto(null);
+    }
     save.reset();
     onDone();
   }
 
   const onSubmit: SubmitHandler<RecipeFormValues> = (values) =>
     save.mutate(values);
+  const formId = editing ? `recipe-form-${recipe.id}` : "recipe-form";
+
+  // Keep a category the recipe already has even if it isn't in our list (Edamam has more)
+  const withCurrent = (list: readonly string[], current?: string) =>
+    current && !list.includes(current) ? [current, ...list] : list;
+  const current = recipe ? valuesFrom(recipe) : EMPTY;
 
   return (
-    <div className="modal-box flex max-h-[90vh] max-w-xl flex-col p-0">
+    <div
+      className={
+        variant === "modal"
+          ? "modal-box flex max-h-[90vh] max-w-xl flex-col p-0"
+          : "flex h-full flex-col"
+      }
+    >
       {/* ── Header ── */}
-      <div className="border-base-300 flex items-start justify-between border-b px-6 pt-5 pb-4">
+      <div className="border-base-300 flex items-start justify-between border-b px-6 pt-4 pb-3">
         <div>
-          <h2 className="font-serif text-2xl font-bold">Create recipe</h2>
+          <h2
+            className={`font-serif font-bold ${variant === "modal" ? "text-2xl" : "text-xl"}`}
+          >
+            {editing ? "Edit recipe" : "Create recipe"}
+          </h2>
           <p className="mt-0.5 text-sm opacity-60">
-            It becomes a new book on your shelf.
+            {editing
+              ? "Change anything, or add what's missing."
+              : "It becomes a new book on your shelf."}
           </p>
         </div>
-        <button
-          type="button"
-          className="btn btn-sm btn-circle btn-ghost"
-          onClick={close}
-          aria-label="Close"
-        >
-          <X className="h-4 w-4" />
-        </button>
+        {/* In the dialog it needs its own ✕; inside a book, the book's ✕ and Cancel are enough */}
+        {variant === "modal" && (
+          <button
+            type="button"
+            className="btn btn-sm btn-circle btn-ghost"
+            onClick={close}
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* ── Body (scrolls) ── */}
       <form
-        id="recipe-form"
+        id={formId}
         onSubmit={handleSubmit(onSubmit)}
-        className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 py-5"
+        className="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-5"
       >
         <Section title="Basics">
           <Field label="Recipe name" required error={errors.label?.message}>
             <input
               className="input w-full"
               placeholder="e.g. Grandma's Lasagna"
-              autoFocus
+              autoFocus={!editing}
               {...register("label", {
                 required: "Give your recipe a name",
                 validate: (v) => v.trim() !== "" || "Give your recipe a name",
@@ -176,8 +240,8 @@ export default function RecipeForm({ onDone }: RecipeFormProps) {
               placeholder="https://"
               {...register("url", {
                 pattern: {
-                  value: /^https:\/\//,
-                  message: "Links must start with https://",
+                  value: /^https?:\/\//,
+                  message: "Links start with https:// or http://",
                 },
               })}
             />
@@ -190,11 +254,14 @@ export default function RecipeForm({ onDone }: RecipeFormProps) {
             onChange={setPhoto}
             maxMb={MAX_PHOTO_MB}
             aspect="aspect-[3/1]"
+            currentUrl={savedImage.url}
+            onClearCurrent={() => setSavedImage({ url: null, key: null })}
           />
         </Section>
 
         <Section title="Details">
-          <div className="grid grid-cols-3 gap-3">
+          {/* One-line labels + units inside the inputs, so all three inputs line up */}
+          <div className="grid grid-cols-3 items-start gap-3">
             <Field label="Servings" required error={errors.yield?.message}>
               <input
                 type="number"
@@ -207,37 +274,33 @@ export default function RecipeForm({ onDone }: RecipeFormProps) {
                 })}
               />
             </Field>
-            <Field
-              label="Total time"
-              hint="minutes"
-              error={errors.totalTime?.message}
-            >
-              <input
-                type="number"
-                inputMode="numeric"
-                className="input w-full"
-                placeholder="45"
-                {...register("totalTime", {
-                  setValueAs: toNumber,
-                  min: { value: 0, message: "Can't be negative" },
-                })}
-              />
+            <Field label="Total time" error={errors.totalTime?.message}>
+              <UnitInput unit="min">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className="w-full min-w-0"
+                  placeholder="45"
+                  {...register("totalTime", {
+                    setValueAs: toNumber,
+                    min: { value: 0, message: "Can't be negative" },
+                  })}
+                />
+              </UnitInput>
             </Field>
-            <Field
-              label="Calories"
-              hint="per serving"
-              error={errors.caloriesPerServing?.message}
-            >
-              <input
-                type="number"
-                inputMode="numeric"
-                className="input w-full"
-                placeholder="520"
-                {...register("caloriesPerServing", {
-                  setValueAs: toNumber,
-                  min: { value: 0, message: "Can't be negative" },
-                })}
-              />
+            <Field label="Calories" error={errors.caloriesPerServing?.message}>
+              <UnitInput unit="/ serving">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className="w-full min-w-0"
+                  placeholder="520"
+                  {...register("caloriesPerServing", {
+                    setValueAs: toNumber,
+                    min: { value: 0, message: "Can't be negative" },
+                  })}
+                />
+              </UnitInput>
             </Field>
           </div>
         </Section>
@@ -245,13 +308,22 @@ export default function RecipeForm({ onDone }: RecipeFormProps) {
         <Section title="Shelf" aside="decides where the book goes">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Dish type">
-              <Select options={DISH_TYPES} {...register("dishType")} />
+              <Select
+                options={withCurrent(DISH_TYPES, current.dishType)}
+                {...register("dishType")}
+              />
             </Field>
             <Field label="Cuisine">
-              <Select options={CUISINE_TYPES} {...register("cuisineType")} />
+              <Select
+                options={withCurrent(CUISINE_TYPES, current.cuisineType)}
+                {...register("cuisineType")}
+              />
             </Field>
             <Field label="Meal">
-              <Select options={MEAL_TYPES} {...register("mealType")} />
+              <Select
+                options={withCurrent(MEAL_TYPES, current.mealType)}
+                {...register("mealType")}
+              />
             </Field>
           </div>
         </Section>
@@ -347,10 +419,10 @@ export default function RecipeForm({ onDone }: RecipeFormProps) {
         >
           Cancel
         </button>
-        {/* form="recipe-form" lets a button outside the <form> submit it */}
+        {/* form={formId} lets a button outside the <form> submit it */}
         <button
           type="submit"
-          form="recipe-form"
+          form={formId}
           className="btn btn-primary"
           disabled={save.isPending}
         >
@@ -359,6 +431,8 @@ export default function RecipeForm({ onDone }: RecipeFormProps) {
               <span className="loading loading-spinner loading-sm" />
               {photo ? "Uploading photo…" : "Saving…"}
             </>
+          ) : editing ? (
+            "Save changes"
           ) : (
             "Save recipe"
           )}
@@ -407,7 +481,7 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium">
+      <span className="truncate text-sm font-medium">
         {label}
         {required && <span className="text-error ml-0.5">*</span>}
         {hint && <span className="ml-1.5 font-normal opacity-50">{hint}</span>}
@@ -434,6 +508,19 @@ function Select({
         </option>
       ))}
     </select>
+  );
+}
+
+// An input with a quiet unit at the end: [ 45        min ]
+// (DaisyUI styles the wrapper as the input box; the real <input> sits inside it)
+function UnitInput({ unit, children }: { unit: string; children: ReactNode }) {
+  return (
+    <span className="input w-full">
+      {children}
+      <span className="shrink-0 text-xs whitespace-nowrap opacity-50">
+        {unit}
+      </span>
+    </span>
   );
 }
 

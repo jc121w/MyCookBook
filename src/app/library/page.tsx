@@ -1,5 +1,6 @@
 "use client";
-import { useRef } from "react";
+import { Suspense, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -9,7 +10,22 @@ import RecipeForm from "@/components/form/RecipeForm";
 import { libraryQuery } from "@/lib/library";
 import { BookShelf } from "@/components/journal/BookShelf";
 
+// useSearchParams needs a Suspense boundary in the App Router
+export default function LibraryPage() {
+  return (
+    <Suspense>
+      <Library />
+    </Suspense>
+  );
+}
+
 const Library = () => {
+  // /library?book=12 opens book 12 (links from search and the profile use this)
+  const router = useRouter();
+  const bookParam = Number(useSearchParams().get("book"));
+  const openBookId =
+    Number.isInteger(bookParam) && bookParam > 0 ? bookParam : null;
+
   // fetch all recips
   const {
     data: recipes,
@@ -43,9 +59,12 @@ const Library = () => {
       <BookShelf
         books={recipes ?? []}
         onAddBook={() => modalRef.current?.showModal()}
+        openBookId={openBookId}
+        // Closing a linked book drops ?book= so a refresh doesn't reopen it
+        onBookClosed={() =>
+          openBookId && router.replace("/library", { scroll: false })
+        }
       />
     </div>
   );
 };
-
-export default Library;

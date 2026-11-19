@@ -34,7 +34,8 @@ export async function DELETE(
   return new NextResponse(null, { status: 204 }); // 204 = success, nothing to send back
 }
 
-// PATCH /api/entries/:id  { rating } → update an entry's rating (null clears it)
+// PATCH /api/entries/:id  { rating?, notes?, cookedOn? } → update any of these
+// (only the fields you send change; rating: null clears it)
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -49,29 +50,66 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
 
   const body = await req.json().catch(() => null);
-  if (!body || !("rating" in body))
-    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+  if (!body || typeof body !== "object")
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
-  // 0.1–5.0, rounded to one decimal, or null to clear. Anything else is rejected.
-  let rating: number | null = null;
-  if (body.rating !== null) {
-    const n = Number(body.rating);
-    if (!Number.isFinite(n) || n < 0.1 || n > 5)
+  // Build the update from only the fields that were sent, validating each
+  const data: {
+    rating?: number | null;
+    notes?: string | null;
+    cookedOn?: Date;
+  } = {};
+
+  if ("rating" in body) {
+    if (body.rating === null) data.rating = null;
+    else {
+      const n = Number(body.rating);
+      if (!Number.isFinite(n) || n < 0.1 || n > 5)
+        return NextResponse.json(
+          { error: "Rating must be 0.1–5" },
+          { status: 400 },
+        );
+      data.rating = Math.round(n * 10) / 10;
+    }
+  }
+
+  if ("notes" in body) {
+    const notes = typeof body.notes === "string" ? body.notes.trim() : "";
+    if (notes.length > 5000)
       return NextResponse.json(
-        { error: "Rating must be 0.1–5" },
+        { error: "Notes are too long" },
         { status: 400 },
       );
-    rating = Math.round(n * 10) / 10;
+    data.notes = notes || null;
   }
+
+  if ("cookedOn" in body) {
+    // "2026-11-15" → midnight UTC, which matches the @db.Date column
+    if (
+      typeof body.cookedOn !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(body.cookedOn)
+    )
+      return NextResponse.json(
+        { error: "cookedOn must be YYYY-MM-DD" },
+        { status: 400 },
+      );
+    const date = new Date(body.cookedOn);
+    if (Number.isNaN(date.getTime()))
+      return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+    data.cookedOn = date;
+  }
+
+  if (Object.keys(data).length === 0)
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
 
   // updateMany lets us filter by ownership (through the recipe) in the same query.
   // count 0 → the entry doesn't exist or isn't yours → 404.
   const { count } = await prisma.recipeEntry.updateMany({
     where: { id: entryId, recipe: { userId: session.user.id } },
-    data: { rating },
+    data,
   });
   if (count === 0)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json({ id: entryId, rating });
+  return NextResponse.json({ id: entryId, ...data });
 }

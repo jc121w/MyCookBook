@@ -271,6 +271,9 @@ type EntryDetailProps = {
 
 // Covers the page area; grows out of its entry in the journal (shared layoutId).
 export function EntryDetail({ entry, onBack, onDelete }: EntryDetailProps) {
+  // Reading is the default; Edit reveals date + notes fields, and Delete lives there
+  const [editing, setEditing] = useState(false);
+
   return (
     <motion.div
       layoutId={`entry-${entry.id}`}
@@ -289,49 +292,157 @@ export function EntryDetail({ entry, onBack, onDelete }: EntryDetailProps) {
         exit={{ opacity: 0, transition: { duration: 0.1 } }}
         className="flex flex-col gap-5 px-6 pt-1 pb-6"
       >
-        <button
-          className="btn btn-ghost btn-sm -ml-3 gap-1 self-start font-serif font-normal"
-          onClick={onBack}
-        >
-          <ChevronLeft className="h-4 w-4" /> All entries
-        </button>
-
-        <div>
-          <p className="text-xs font-semibold tracking-widest uppercase opacity-60">
-            {fmt(entry.cookedOn, { weekday: "long" })}
-          </p>
-          <h3 className="font-serif text-2xl leading-tight font-bold">
-            {fmt(entry.cookedOn, {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </h3>
+        <div className="-mx-3 flex items-center justify-between">
+          <button
+            className="btn btn-ghost btn-sm gap-1 font-serif font-normal"
+            onClick={onBack}
+          >
+            <ChevronLeft className="h-4 w-4" /> All entries
+          </button>
+          {!editing && (
+            <button
+              className="btn btn-ghost btn-xs gap-1 font-serif font-normal opacity-60 hover:opacity-100"
+              onClick={() => setEditing(true)}
+            >
+              <PenLine className="h-3.5 w-3.5" /> Edit
+            </button>
+          )}
         </div>
 
-        <RatingEditor entry={entry} />
-
-        {entry.photoUrl && <MountedPhoto src={entry.photoUrl} />}
-
-        {entry.notes ? (
-          <p className="font-serif text-lg leading-8 whitespace-pre-line">
-            {entry.notes}
-          </p>
-        ) : (
-          <p className="font-serif italic opacity-45">
-            No notes this time, just cooked and enjoyed it.
-          </p>
-        )}
-
-        <div className="mt-4 flex justify-center">
-          <ConfirmDelete
-            label="Delete entry"
-            question="Delete this entry?"
-            onConfirm={onDelete}
+        {editing ? (
+          <EntryEditor
+            entry={entry}
+            onDone={() => setEditing(false)}
+            onDelete={onDelete}
           />
-        </div>
+        ) : (
+          <>
+            <div>
+              <p className="text-xs font-semibold tracking-widest uppercase opacity-60">
+                {fmt(entry.cookedOn, { weekday: "long" })}
+              </p>
+              <h3 className="font-serif text-2xl leading-tight font-bold">
+                {fmt(entry.cookedOn, {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </h3>
+            </div>
+
+            <RatingEditor entry={entry} />
+
+            {entry.photoUrl && <MountedPhoto src={entry.photoUrl} />}
+
+            {entry.notes ? (
+              <p className="font-serif text-lg leading-8 whitespace-pre-line">
+                {entry.notes}
+              </p>
+            ) : (
+              <p className="font-serif italic opacity-45">
+                No notes this time, just cooked and enjoyed it.
+              </p>
+            )}
+          </>
+        )}
       </motion.div>
     </motion.div>
+  );
+}
+
+// Edit the date and notes. Delete sits here, at the bottom, away from everyday reading.
+function EntryEditor({
+  entry,
+  onDone,
+  onDelete,
+}: {
+  entry: RecipeEntry;
+  onDone: () => void;
+  onDelete: () => Promise<void>;
+}) {
+  const queryClient = useQueryClient();
+  // The stored date as "YYYY-MM-DD" (UTC, matching @db.Date), which <input type="date"> wants
+  const [cookedOn, setCookedOn] = useState(
+    new Date(entry.cookedOn).toISOString().slice(0, 10),
+  );
+  const [notes, setNotes] = useState(entry.notes ?? "");
+  const today = new Date().toLocaleDateString("en-CA"); // local today, for max
+
+  const save = useMutation({
+    mutationFn: () =>
+      axios.patch(`/api/entries/${entry.id}`, { cookedOn, notes }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["entries", entry.recipeId],
+        }),
+        queryClient.invalidateQueries({ queryKey: ["recipes"] }),
+      ]);
+      onDone();
+    },
+  });
+
+  return (
+    <div className="flex flex-col gap-5">
+      <h3 className="font-serif text-xl font-bold">Edit entry</h3>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium">Date cooked</span>
+        <input
+          type="date"
+          max={today}
+          className="input w-full"
+          value={cookedOn}
+          onChange={(e) => setCookedOn(e.target.value)}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium">Notes</span>
+        <textarea
+          rows={6}
+          className="textarea w-full font-serif text-base leading-relaxed"
+          placeholder="What did you change? How did it turn out?"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          maxLength={5000}
+        />
+      </label>
+
+      {save.isError && (
+        <p className="text-error text-sm">Couldn&apos;t save. Try again.</p>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <button
+          className="btn btn-ghost"
+          onClick={onDone}
+          disabled={save.isPending}
+        >
+          Cancel
+        </button>
+        <button
+          className="btn btn-primary"
+          onClick={() => save.mutate()}
+          disabled={save.isPending || !cookedOn || cookedOn > today}
+        >
+          {save.isPending ? (
+            <span className="loading loading-spinner loading-sm" />
+          ) : (
+            "Save"
+          )}
+        </button>
+      </div>
+
+      {/* Separated from Save/Cancel so it's never hit by accident */}
+      <div className="border-base-300 mt-4 flex justify-center border-t pt-5">
+        <ConfirmDelete
+          label="Delete this entry"
+          question="Delete this entry for good?"
+          onConfirm={onDelete}
+        />
+      </div>
+    </div>
   );
 }
 

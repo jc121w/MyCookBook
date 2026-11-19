@@ -11,6 +11,7 @@ import { EntryForm } from "./EntryForm";
 import { CoverPage } from "./CoverPage";
 import { EntryDetail, JournalList } from "./JournalPage";
 import { RecipePage } from "./RecipePage";
+import RecipeForm from "@/components/form/RecipeForm";
 
 // The book has three pages: cover, the recipe, and the journal (a list of entries).
 // `kind` is the tag that tells TypeScript which one you have.
@@ -75,6 +76,7 @@ export function Book({ book, onClose }: BookProps) {
   }
 
   const [writing, setWriting] = useState(false);
+  const [editing, setEditing] = useState(false); // editing the recipe itself
 
   async function handleSaved(entry: RecipeEntry) {
     // Refetch this book's entries AND the shelf (so "Cooked N times" updates).
@@ -113,7 +115,16 @@ export function Book({ book, onClose }: BookProps) {
         </button>
       </div>
 
-      {writing ? (
+      {editing ? (
+        // The same form as "Create recipe", filled in, inside the book
+        <div className="min-h-0 flex-1">
+          <RecipeForm
+            recipe={book}
+            variant="panel"
+            onDone={() => setEditing(false)}
+          />
+        </div>
+      ) : writing ? (
         <div className="min-h-0 flex-1">
           <EntryForm
             recipeId={book.id}
@@ -145,7 +156,9 @@ export function Book({ book, onClose }: BookProps) {
                     isLoading={isLoading}
                   />
                 )}
-                {page.kind === "recipe" && <RecipePage book={book} />}
+                {page.kind === "recipe" && (
+                  <RecipePage book={book} onEdit={() => setEditing(true)} />
+                )}
                 {page.kind === "journal" && (
                   <JournalList
                     entries={entries}

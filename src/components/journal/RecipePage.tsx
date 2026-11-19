@@ -1,6 +1,13 @@
 "use client";
 
-import { Check, Clock, ExternalLink, Flame, Users } from "lucide-react";
+import {
+  Check,
+  Clock,
+  ExternalLink,
+  Flame,
+  PenLine,
+  Users,
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { BookWithCount, Recipe } from "@/app/types";
 
@@ -21,7 +28,13 @@ const DETAILS = [
 
 type Nutrients = Recipe["totalNutrients"];
 
-export function RecipePage({ book }: { book: BookWithCount }) {
+export function RecipePage({
+  book,
+  onEdit,
+}: {
+  book: BookWithCount;
+  onEdit: () => void;
+}) {
   // The DB column is Prisma `Json`, so TypeScript only knows it as JsonValue.
   // We know it has Edamam's shape, so narrow it here, at the boundary.
   const nutrients = book.totalNutrients as Nutrients | null;
@@ -47,9 +60,19 @@ export function RecipePage({ book }: { book: BookWithCount }) {
   return (
     <div className="flex flex-col gap-6 pt-2 pb-2">
       <div>
-        <p className="text-xs font-semibold tracking-widest uppercase opacity-60">
-          The recipe
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold tracking-widest uppercase opacity-60">
+            The recipe
+          </p>
+          {/* Quiet, like the other page links: edit details, add ingredients, steps, a photo */}
+          <button
+            type="button"
+            onClick={onEdit}
+            className="btn btn-ghost btn-xs gap-1 font-serif font-normal opacity-60 hover:opacity-100"
+          >
+            <PenLine className="h-3.5 w-3.5" /> Edit
+          </button>
+        </div>
         <div className="divider my-0" />
       </div>
 

@@ -8,6 +8,8 @@ type PhotoPickerProps = {
   onChange: (file: File | null) => void;
   maxMb: number; // keep in sync with maxFileSize in api/uploadthing/core.ts
   aspect?: string; // Tailwind aspect class for the box
+  currentUrl?: string | null; // editing: the photo already saved (shown until replaced)
+  onClearCurrent?: () => void; // editing: remove the saved photo
 };
 
 // Click or drop to choose a photo; shows a preview with Change / Remove.
@@ -17,9 +19,12 @@ export function PhotoPicker({
   onChange,
   maxMb,
   aspect = "aspect-[4/3]",
+  currentUrl = null,
+  onClearCurrent,
 }: PhotoPickerProps) {
   const [error, setError] = useState<string | null>(null);
-  const preview = usePreviewUrl(file);
+  const picked = usePreviewUrl(file);
+  const preview = picked ?? currentUrl; // a newly picked photo wins over the saved one
 
   function pick(next: File | undefined) {
     setError(null);
@@ -65,7 +70,10 @@ export function PhotoPicker({
             <button
               type="button"
               className="btn btn-sm btn-circle"
-              onClick={() => onChange(null)}
+              onClick={() => {
+                onChange(null);
+                onClearCurrent?.();
+              }}
               aria-label="Remove photo"
             >
               <X className="h-4 w-4" />

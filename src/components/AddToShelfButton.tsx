@@ -19,8 +19,9 @@ export function AddToShelfButton({
 }) {
   const queryClient = useQueryClient();
   const shelf = useQuery(libraryQuery); // cached; shared by every card on the page
-  const onShelf =
-    shelf.data?.some((book) => book.edamamId === edamamId) ?? false;
+  // The shelf copy of this recipe, if you've added it (its id opens the book)
+  const book = shelf.data?.find((b) => b.edamamId === edamamId);
+  const onShelf = book != null;
   const signedOut =
     axios.isAxiosError(shelf.error) && shelf.error.response?.status === 401;
 
@@ -44,9 +45,9 @@ export function AddToShelfButton({
   if (onShelf) {
     return (
       <Link
-        href="/library"
+        href={`/library?book=${book!.id}`}
         className={`${base} btn-ghost text-success`}
-        title="Open your shelf"
+        title="Open this book on your shelf"
       >
         <BookCheck className="h-4 w-4" /> On your shelf
       </Link>

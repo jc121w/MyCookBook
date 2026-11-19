@@ -2,7 +2,24 @@
 
 import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import {
+  CakeSlice,
+  ChefHat,
+  Croissant,
+  CupSoda,
+  Egg,
+  Fish,
+  Pizza,
+  Plus,
+  Salad,
+  Sandwich,
+  Soup,
+  Sprout,
+  Trash2,
+  UtensilsCrossed,
+  Wine,
+  type LucideIcon,
+} from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { BookWithCount } from "@/app/types";
@@ -19,37 +36,61 @@ const ROW_HEIGHT = 236; // space above each ledge (tallest book + room to lift)
 const SHELF_PADDING_X = 16;
 const BOOK_GAP = 2;
 
-// Real book colors (not theme colors) so the shelf looks like furniture in both themes
+// Kitchen colors, from the same warm family as the app's cream/brown theme.
+// fg = title color, accent = bands, dots and the ribbon.
 const SPINES = [
-  { bg: "#7f1d1d", fg: "#fbe8cc", accent: "#d4a24c" }, // oxblood
-  { bg: "#1e3a5f", fg: "#e8eef6", accent: "#c9a14a" }, // navy
-  { bg: "#2f4f3a", fg: "#efe6cf", accent: "#c9a14a" }, // forest
-  { bg: "#b7832b", fg: "#2b1d0e", accent: "#5a3b12" }, // mustard
-  { bg: "#e9dfc9", fg: "#3b2a1a", accent: "#8a5a2b" }, // cream
-  { bg: "#5b3a29", fg: "#f3e3c3", accent: "#d8b26a" }, // leather
-  { bg: "#3f3f46", fg: "#f4f4f5", accent: "#a1a1aa" }, // charcoal
+  { bg: "#b5562f", fg: "#fbefe0", accent: "#f0c987" }, // terracotta
+  { bg: "#7d8b6a", fg: "#f6f1e4", accent: "#e8d9a8" }, // sage
+  { bg: "#c99a3c", fg: "#3b2a14", accent: "#7a4f1a" }, // mustard
+  { bg: "#efe4cf", fg: "#4a3423", accent: "#b5562f" }, // cream
+  { bg: "#6b4a3a", fg: "#f5e6cf", accent: "#e2b878" }, // cocoa
+  { bg: "#c08a7d", fg: "#fff4ec", accent: "#7a3f33" }, // dusty rose
+  { bg: "#5f6b3c", fg: "#f3ecd6", accent: "#d9c48a" }, // olive
+  { bg: "#8f3f2b", fg: "#fbe8d4", accent: "#e6b96d" }, // paprika
 ];
 
 // Same book → same look every render (derived from its id, not random)
 function spineLook(id: number) {
   return {
     ...SPINES[id % SPINES.length],
-    width: 38 + ((id * 13) % 24), // 38–61px
-    height: 156 + ((id * 37) % 54), // 156–209px
+    width: 40 + ((id * 13) % 22), // 40–61px
+    height: 160 + ((id * 37) % 50), // 160–209px
     variant: id % 3 === 0 ? "label" : "bands", // two decoration styles for variety
   } as const;
 }
 
+// Honey oak shelves on a warm walnut back wall
 const WOOD = {
-  frame: "linear-gradient(180deg, #7a5233, #5e3d24)",
-  back: "linear-gradient(180deg, #2a1c12, #3a2819)",
-  ledgeTop: "linear-gradient(180deg, #a27650, #8a6040)",
-  ledgeFront: "linear-gradient(180deg, #6e4a2d, #573821)",
+  frame: "linear-gradient(180deg, #b07c4f, #94643d)",
+  back: "linear-gradient(180deg, #5a3f2c, #6e4f37)",
+  ledgeTop: "linear-gradient(180deg, #d9a877, #c08d5d)",
+  ledgeFront: "linear-gradient(180deg, #a8754a, #8c5e38)",
 };
 
-// Spine shading: dark edges + a highlight so it looks rounded, not flat
+// Spine shading: soft edges + a highlight so it looks rounded, not flat
 const SPINE_SHADE =
-  "linear-gradient(to right, rgb(0 0 0 / .35), rgb(255 255 255 / .12) 25%, transparent 55%, rgb(0 0 0 / .28))";
+  "linear-gradient(to right, rgb(0 0 0 / .28), rgb(255 255 255 / .14) 25%, transparent 55%, rgb(0 0 0 / .22))";
+
+// A faint woven texture, like a cloth-bound cookbook
+const CLOTH =
+  "repeating-linear-gradient(45deg, rgb(255 255 255 / .05) 0 2px, transparent 2px 4px), repeating-linear-gradient(-45deg, rgb(0 0 0 / .05) 0 2px, transparent 2px 4px)";
+
+// A small icon at the top of each spine for what kind of dish it is
+const DISH_ICONS: [RegExp, LucideIcon][] = [
+  [/soup/, Soup],
+  [/salad/, Salad],
+  [/dessert|sweet|cake|ice cream|biscuit|cookie|pie|tart/, CakeSlice],
+  [/bread|pancake|pastr/, Croissant],
+  [/cocktail|alcohol/, Wine],
+  [/drink/, CupSoda],
+  [/pizza/, Pizza],
+  [/sandwich/, Sandwich],
+  [/seafood|fish/, Fish],
+  [/egg/, Egg],
+  [/main|pasta|side|starter/, UtensilsCrossed],
+];
+const dishIcon = (dishType?: string): LucideIcon =>
+  DISH_ICONS.find(([re]) => dishType && re.test(dishType))?.[1] ?? ChefHat;
 
 // ── Helpers ──────────────────────────────────────────────
 
@@ -112,7 +153,7 @@ type Section = {
 };
 
 const SECTION_SPACE = 10; // px on each side of a bookend
-const BOOKEND_WIDTH = 8;
+const BOOKEND_WIDTH = 30; // the little potted herb between sections
 
 // Rough width of a label plate (10px uppercase, wide tracking ≈ 8.5px per character)
 function plateWidth(section: { name: string; count: number }) {
@@ -197,15 +238,20 @@ function Bookend({ id }: { id: string }) {
       animate={SETTLED}
       transition={{ duration: 0.25, ...LAYOUT_TRANSITION }}
       aria-hidden
-      className="shrink-0 rounded-t-[2px]"
-      style={{
-        width: BOOKEND_WIDTH,
-        height: 72,
-        background:
-          "linear-gradient(90deg, #3d3d3d, #9a9a9a 40%, #555 70%, #2e2e2e)",
-        boxShadow: "2px 2px 4px rgb(0 0 0 / .5)",
-      }}
-    />
+      className="flex shrink-0 flex-col items-center"
+      style={{ width: BOOKEND_WIDTH }}
+    >
+      {/* A potted herb: leaves, then a terracotta pot with a rim */}
+      <Sprout
+        className="-mb-1 h-8 w-8 text-[#8fae6b] drop-shadow"
+        strokeWidth={2}
+      />
+      <span className="block h-1.5 w-[30px] rounded-sm bg-[#c26a43] shadow-sm" />
+      <span
+        className="block h-6 w-6 bg-[#b05a36] shadow-md"
+        style={{ clipPath: "polygon(0 0, 100% 0, 85% 100%, 15% 100%)" }}
+      />
+    </motion.div>
   );
 }
 
@@ -217,13 +263,23 @@ const BRASS = "linear-gradient(180deg, #ecd28c, #c9a24c 55%, #a8832f)";
 type BookShelfProps = {
   books: BookWithCount[];
   onAddBook?: () => void; // the "Create recipe" button above the bookcase
+  openBookId?: number | null; // open this book once the shelf is drawn (e.g. /library?book=12)
+  onBookClosed?: () => void; // a book was closed (the page uses it to tidy the URL)
 };
 
-export function BookShelf({ books, onAddBook }: BookShelfProps) {
+export function BookShelf({
+  books,
+  onAddBook,
+  openBookId,
+  onBookClosed,
+}: BookShelfProps) {
   // Which book is open. null = shelf only.
   const [openId, setOpenId] = useState<number | null>(null);
   const open = books.find((b) => b.id === openId);
-  const close = () => setOpenId(null);
+  const close = () => {
+    setOpenId(null);
+    onBookClosed?.();
+  };
   // Was the book pulled out (tilted) when clicked? Then the open book starts tilted too.
   const [openTilted, setOpenTilted] = useState(false);
 
@@ -260,6 +316,21 @@ export function BookShelf({ books, onAddBook }: BookShelfProps) {
 
   const [groupBy, setGroupBy] = useState<GroupBy>("dishType");
   const [shelfRef, shelfWidth] = useWidth<HTMLDivElement>();
+
+  // Arriving with a book to open (from search's "On your shelf", or the profile):
+  // wait until the shelf is drawn, then open it, so it grows out of its own spine
+  // and you see where it lives. Once per book id.
+  const openedFromOutside = useRef<number | null>(null);
+  useEffect(() => {
+    if (openBookId == null || openedFromOutside.current === openBookId) return;
+    if (shelfWidth === 0 || !books.some((b) => b.id === openBookId)) return;
+    openedFromOutside.current = openBookId;
+    const timer = setTimeout(() => {
+      setOpenTilted(false);
+      setOpenId(openBookId);
+    }, 350); // a beat to see the shelf first
+    return () => clearTimeout(timer);
+  }, [openBookId, shelfWidth, books]);
 
   // Sections flow along the shelves like real books: a small section shares a shelf
   // with the next one (a bookend between them); a big one continues onto the next shelf.
@@ -611,6 +682,7 @@ function Spine({
 }) {
   const look = spineLook(book.id);
   const count = book._count.entries;
+  const DishIcon = dishIcon(book.dishType[0]);
   const logs =
     count === 0
       ? "No recipe logs"
@@ -757,7 +829,7 @@ function Spine({
         transition={{ duration: 0.22, ease: EASE, ...LAYOUT_TRANSITION }}
         // Keyboard users get a focus ring instead of the tilt (a click also focuses,
         // and a tilt-on-focus would keep the book tilted after clicking)
-        className="relative block overflow-hidden rounded-[3px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-white"
+        className="relative block rounded-[3px] outline-offset-2 focus-visible:outline-2 focus-visible:outline-white"
         style={{
           width: look.width,
           height: look.height,
@@ -771,23 +843,55 @@ function Spine({
         }}
         aria-label={`${book.label}, ${logs}`}
       >
+        {/* Cloth texture + rounded-spine shading */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{ background: SPINE_SHADE }}
+          className="pointer-events-none absolute inset-0 rounded-[3px]"
+          style={{ background: `${SPINE_SHADE}, ${CLOTH}` }}
+        />
+
+        {/* Ribbon bookmark sticking out of the top: this book has entries */}
+        {count > 0 && (
+          <span
+            aria-hidden
+            className="absolute -top-3 h-6 w-[7px] shadow-sm"
+            style={{
+              right: 10,
+              background: look.accent,
+              clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)", // notched tail
+            }}
+          />
+        )}
+
+        {/* Headband and tail band, like a bound book */}
+        <span
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-[5px] rounded-t-[3px] opacity-60"
+          style={{ background: look.accent }}
+        />
+        <span
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-[5px] rounded-b-[3px] opacity-60"
+          style={{ background: look.accent }}
         />
 
         {look.variant === "bands" && (
           <>
-            <Band top={10} color={look.accent} />
-            <Band top={16} color={look.accent} thin />
-            <Band bottom={26} color={look.accent} thin />
-            <Band bottom={32} color={look.accent} />
+            <Band top={36} color={look.accent} thin />
+            <Band bottom={30} color={look.accent} thin />
           </>
         )}
 
+        {/* What kind of dish, at the top of the spine */}
+        <span
+          className="absolute inset-x-0 top-3 flex justify-center"
+          style={{ color: look.fg }}
+        >
+          <DishIcon className="h-4 w-4 opacity-80" strokeWidth={1.75} />
+        </span>
+
         {/* Title runs down the spine; the ellipsis kicks in when it's too long */}
-        <span className="absolute inset-x-0 top-7 bottom-11 flex justify-center">
+        <span className="absolute inset-x-0 top-10 bottom-9 flex justify-center">
           <span
             className="overflow-hidden font-serif text-[13px] font-semibold tracking-wide text-ellipsis whitespace-nowrap [writing-mode:vertical-rl]"
             style={
@@ -799,19 +903,36 @@ function Spine({
                     borderRadius: 2,
                     maxHeight: "100%",
                   }
-                : { maxHeight: "100%" }
+                : { maxHeight: "100%", color: look.fg }
             }
           >
             {book.label}
           </span>
         </span>
 
+        {/* How many times you've cooked it: little dots, up to 5 (then "5+") */}
         {count > 0 && (
           <span
-            className="absolute inset-x-0 bottom-2 text-center text-[10px] font-bold"
-            style={{ color: look.accent }}
+            className="absolute inset-x-0 bottom-3 flex flex-col items-center gap-[3px]"
+            aria-hidden
           >
-            {count}
+            <span className="flex gap-[3px]">
+              {Array.from({ length: Math.min(count, 5) }).map((_, i) => (
+                <span
+                  key={i}
+                  className="h-[5px] w-[5px] rounded-full"
+                  style={{ background: look.accent }}
+                />
+              ))}
+            </span>
+            {count > 5 && (
+              <span
+                className="text-[8px] leading-none font-bold"
+                style={{ color: look.accent }}
+              >
+                {count}
+              </span>
+            )}
           </span>
         )}
       </motion.button>

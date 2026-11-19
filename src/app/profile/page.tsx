@@ -1,69 +1,354 @@
 import { auth } from "@/lib/auth";
-import prisma from "@/lib/db";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import Link from "next/link";
-import { CircleUser, BookmarkCheck, Settings } from "lucide-react";
+import { getKitchenStats, type KitchenStats } from "@/lib/kitchenStats";
+import { titleCase } from "@/lib/recipeOptions";
+import { Stars } from "@/components/journal/StarRating";
 import { SignOutButton } from "@/components/buttons/SignOutButton";
+import {
+  BookOpen,
+  Camera,
+  ChefHat,
+  CircleUser,
+  Clock,
+  CookingPot,
+  Settings,
+} from "lucide-react";
+import { headers } from "next/headers";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
+// A server component: it reads the session and the database directly, no API route needed
 export default async function ProfilePage() {
-  // Server-side: read the session directly
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) redirect("/sign-in"); // auth gate — bounce logged-out users
+  if (!session) redirect("/sign-in");
 
   const { name, email, image } = session.user;
-  const savedCount = await prisma.recipe.count({
-    where: { userId: session.user.id }, // real data, scoped to this user
-  });
+  const stats = await getKitchenStats(session.user.id);
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 py-10">
-      {/* Identity header */}
-      <div className="bg-base-200 flex flex-col items-center gap-4 rounded-2xl p-8 text-center">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-10">
+      {/* ── Who ── */}
+      <header className="flex flex-col items-center gap-3 text-center">
         <div className="avatar">
-          <div className="ring-primary ring-offset-base-100 w-24 rounded-full ring ring-offset-2">
+          <div className="ring-base-300 ring-offset-base-100 w-24 rounded-full ring-2 ring-offset-4">
             {image ? (
-              <img src={image} alt={name} />
+              <img src={image} alt="" />
             ) : (
-              <CircleUser className="h-24 w-24" />
+              <CircleUser className="h-24 w-24 opacity-50" strokeWidth={1.25} />
             )}
           </div>
         </div>
-        <h1 className="text-2xl font-bold">{name}</h1>
-        <p className="opacity-70">{email}</p>
-      </div>
-
-      {/* Stats */}
-      <div className="stats stats-vertical sm:stats-horizontal w-full shadow">
-        <div className="stat">
-          <div className="stat-figure text-primary">
-            <BookmarkCheck />
-          </div>
-          <div className="stat-title">Saved Recipes</div>
-          <div className="stat-value text-primary">{savedCount}</div>
-          <div className="stat-desc">in your library</div>
+        <div>
+          <h1 className="font-serif text-3xl font-bold">{name}</h1>
+          <p className="mt-1 font-serif italic opacity-60">
+            {stats.firstCook
+              ? `Cooking since ${monthYear(stats.firstCook)}`
+              : "Your kitchen journal starts here"}
+          </p>
+          <p className="mt-1 text-xs opacity-45">{email}</p>
         </div>
-      </div>
+      </header>
 
-      {/* Action cards */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      {stats.meals === 0 ? (
+        <EmptyKitchen books={stats.books} />
+      ) : (
+        <>
+          <Highlights stats={stats} />
+          <Story stats={stats} />
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            {stats.favorite && <Favorite favorite={stats.favorite} />}
+            <OnRepeat recipes={stats.mostCooked} />
+          </div>
+
+          <AverageMeal nutrition={stats.nutrition} />
+        </>
+      )}
+
+      {/* ── Elsewhere ── */}
+      <nav className="border-base-300 flex flex-wrap items-center justify-center gap-2 border-t pt-6">
         <Link
           href="/library"
-          className="card bg-base-200 hover:bg-base-300 p-6 transition"
+          className="btn btn-ghost btn-sm gap-1.5 font-serif font-normal"
         >
-          <BookmarkCheck className="text-primary mb-2" />
-          <h3 className="font-semibold">My Library</h3>
-          <p className="text-sm opacity-70">View your saved recipes</p>
+          <BookOpen className="h-4 w-4" /> Your shelf
         </Link>
         <Link
           href="/settings"
-          className="card bg-base-200 hover:bg-base-300 p-6 transition"
+          className="btn btn-ghost btn-sm gap-1.5 font-serif font-normal"
         >
-          <Settings className="text-primary mb-2" />
-          <h3 className="font-semibold">Settings</h3>{" "}
-          <p className="text-sm opacity-70">View your settings</p>
+          <Settings className="h-4 w-4" /> Settings
         </Link>
-      </div>
+        {/* The button is styled for the sidebar; this wrapper makes it match the links here */}
+        <span className="btn btn-ghost btn-sm font-serif font-normal [&_svg]:h-4 [&_svg]:w-4 [&>div]:flex [&>div]:items-center [&>div]:gap-1.5">
+          <SignOutButton />
+        </span>
+      </nav>
     </div>
   );
 }
+
+// ── Pieces ───────────────────────────────────────────────
+
+const Label = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-xs font-semibold tracking-widest uppercase opacity-60">
+    {children}
+  </p>
+);
+
+// Four stats, each in its own tile: icon, number, then its label right underneath,
+// so every label clearly belongs to the number above it
+function Highlights({ stats }: { stats: KitchenStats }) {
+  const items = [
+    {
+      icon: CookingPot,
+      value: stats.meals,
+      label: stats.meals === 1 ? "meal cooked" : "meals cooked",
+    },
+    {
+      icon: BookOpen,
+      value: stats.books,
+      label:
+        stats.books === 1 ? "recipe on your shelf" : "recipes on your shelf",
+    },
+    { icon: Clock, value: stats.hours, label: "hours at the stove" },
+    {
+      icon: Camera,
+      value: stats.photos,
+      label: stats.photos === 1 ? "photo taken" : "photos taken",
+    },
+  ];
+  return (
+    <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {items.map(({ icon: Icon, value, label }) => (
+        <div
+          key={label}
+          className="bg-base-200/60 border-base-300/70 flex flex-col items-center gap-1 rounded-2xl border px-3 py-5 text-center"
+        >
+          <Icon className="text-primary/70 mb-1 h-5 w-5" strokeWidth={1.75} />
+          <span className="font-serif text-4xl leading-none font-bold tabular-nums">
+            {value.toLocaleString()}
+          </span>
+          <span className="text-xs leading-snug font-medium tracking-wide uppercase opacity-60">
+            {label}
+          </span>
+        </div>
+      ))}
+    </section>
+  );
+}
+
+// The key facts in the story, highlighted so they stand out from the sentence
+const Em = ({ children }: { children: React.ReactNode }) => (
+  <strong className="text-primary font-semibold">{children}</strong>
+);
+
+// The numbers, said the way you'd say them, with the facts that matter highlighted
+function Story({ stats }: { stats: KitchenStats }) {
+  return (
+    <p className="mx-auto max-w-xl text-center font-serif text-lg leading-relaxed opacity-90">
+      You&apos;ve cooked <Em>{count(stats.meals, "meal")}</Em> from{" "}
+      <Em>{count(stats.cookedRecipes, "recipe")}</Em>.
+      {stats.topCuisine && (
+        <>
+          {" "}
+          Your go-to cuisine is <Em>{titleCase(stats.topCuisine)}</Em>.
+        </>
+      )}{" "}
+      {stats.thisMonth > 0 ? (
+        <>
+          This month you&apos;ve been in the kitchen{" "}
+          <Em>{count(stats.thisMonth, "time")}</Em>.
+        </>
+      ) : (
+        <>Nothing logged this month yet.</>
+      )}
+      {stats.avgRating != null && (
+        <>
+          {" "}
+          On average you rate your cooking{" "}
+          <Em>{stats.avgRating.toFixed(1)} out of 5</Em>.
+        </>
+      )}
+    </p>
+  );
+}
+
+type Cooked = NonNullable<KitchenStats["favorite"]>;
+
+function Favorite({ favorite }: { favorite: Cooked }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <Label>Your favorite</Label>
+      <Link
+        href={`/library?book=${favorite.id}`}
+        className="group flex flex-col gap-3"
+      >
+        <span className="-rotate-1 bg-white p-2 pb-3 shadow-md transition-transform group-hover:rotate-0">
+          {favorite.photo ? (
+            <img
+              src={favorite.photo}
+              alt=""
+              className="aspect-[4/3] w-full object-cover"
+            />
+          ) : (
+            <span className="bg-base-200 text-base-content/25 grid aspect-[4/3] w-full place-items-center">
+              <ChefHat className="h-12 w-12" strokeWidth={1.5} />
+            </span>
+          )}
+        </span>
+        <span>
+          <span className="block font-serif text-2xl leading-tight font-bold group-hover:underline">
+            {favorite.label}
+          </span>
+          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+            {favorite.avgRating != null && (
+              <Stars value={favorite.avgRating} size={14} />
+            )}
+            <span className="font-serif italic opacity-60">
+              cooked {count(favorite.cooks, "time")}
+              {favorite.source ? ` · from ${favorite.source}` : ""}
+            </span>
+          </span>
+        </span>
+      </Link>
+    </section>
+  );
+}
+
+// Your most-cooked recipes, with a quiet bar showing how often
+function OnRepeat({ recipes }: { recipes: Cooked[] }) {
+  const most = recipes[0]?.cooks ?? 1;
+  return (
+    <section className="flex flex-col gap-3">
+      <Label>On repeat</Label>
+      <ol className="flex flex-col gap-4">
+        {recipes.map((r, i) => (
+          <li key={r.id}>
+            <Link
+              href={`/library?book=${r.id}`}
+              className="hover:bg-base-200/60 -mx-2 flex items-center gap-3 rounded-lg px-2 py-1 transition-colors"
+            >
+              <span className="w-4 font-serif text-lg font-bold opacity-40">
+                {i + 1}
+              </span>
+              {r.photo ? (
+                <img
+                  src={r.photo}
+                  alt=""
+                  className="h-12 w-12 shrink-0 rounded-md object-cover shadow-sm"
+                />
+              ) : (
+                <span className="bg-base-200 text-base-content/30 grid h-12 w-12 shrink-0 place-items-center rounded-md">
+                  <ChefHat className="h-5 w-5" strokeWidth={1.5} />
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-serif font-semibold">
+                  {r.label}
+                </span>
+                <span className="mt-1 flex items-center gap-2">
+                  <span className="bg-base-300 h-1.5 flex-1 overflow-hidden rounded-full">
+                    <span
+                      className="bg-primary/70 block h-full rounded-full"
+                      style={{ width: `${(r.cooks / most) * 100}%` }}
+                    />
+                  </span>
+                  <span className="font-serif text-xs whitespace-nowrap italic opacity-60">
+                    {count(r.cooks, "time")}
+                  </span>
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function AverageMeal({ nutrition }: { nutrition: KitchenStats["nutrition"] }) {
+  const items = [
+    { label: "calories", value: nutrition.calories, unit: "" },
+    { label: "protein", value: nutrition.protein, unit: "g" },
+    { label: "carbs", value: nutrition.carbs, unit: "g" },
+    { label: "fat", value: nutrition.fat, unit: "g" },
+  ].filter((i) => i.value != null);
+  if (items.length === 0) return null;
+
+  return (
+    <section className="flex flex-col gap-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <Label>An average meal you cook</Label>
+        <span className="font-serif text-xs italic opacity-50">
+          per serving, across every cook you&apos;ve logged
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {items.map((i) => (
+          <div
+            key={i.label}
+            className="border-base-300 rounded-xl border px-3 py-4 text-center"
+          >
+            <span className="font-serif text-3xl font-bold tabular-nums">
+              {i.value}
+              {i.unit && (
+                <span className="ml-0.5 text-base font-normal opacity-60">
+                  {i.unit}
+                </span>
+              )}
+            </span>
+            <span className="mt-1 block font-serif text-sm italic opacity-60">
+              {i.label}
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function EmptyKitchen({ books }: { books: number }) {
+  return (
+    <section className="bg-base-200/60 flex flex-col items-center gap-3 rounded-2xl px-6 py-12 text-center">
+      <ChefHat className="h-10 w-10 opacity-40" strokeWidth={1.5} />
+      <p className="max-w-sm font-serif text-lg leading-relaxed">
+        {books > 0
+          ? "Your shelf is ready. Cook something and add a page — your stats will grow from there."
+          : "Your kitchen story starts with your first recipe."}
+      </p>
+      <Link
+        href={books > 0 ? "/library" : "/search"}
+        className="btn btn-primary btn-sm mt-2 font-serif"
+      >
+        {books > 0 ? "Open your shelf" : "Find a recipe"}
+      </Link>
+    </section>
+  );
+}
+
+// ── Wording helpers ──
+
+const WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+];
+// count(3, "meal") → "three meals", count(1, "time") → "once"-style "one time", 12 → "12 meals"
+function count(n: number, noun: string) {
+  const word = n < 10 ? WORDS[n] : n.toLocaleString();
+  return `${word} ${noun}${n === 1 ? "" : "s"}`;
+}
+
+const monthYear = (d: Date) =>
+  d.toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
