@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { cleanFileKey } from "@/lib/uploadthingServer";
 import prisma from "@/lib/db";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -8,10 +9,12 @@ const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/; // what <input type="date"> sends: "202
 // POST /api/entries  { recipeId, cookedOn, notes?, photoUrl? }
 export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json().catch(() => null);
-  if (!body) return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  if (!body)
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
 
   // ── Validate each field we accept (and ignore everything else) ──
   const recipeId = Number(body.recipeId);
@@ -19,17 +22,33 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid recipeId" }, { status: 400 });
 
   if (typeof body.cookedOn !== "string" || !DATE_ONLY.test(body.cookedOn))
-    return NextResponse.json({ error: "cookedOn must be YYYY-MM-DD" }, { status: 400 });
+    return NextResponse.json(
+      { error: "cookedOn must be YYYY-MM-DD" },
+      { status: 400 },
+    );
   const cookedOn = new Date(body.cookedOn); // "2026-11-15" → midnight UTC, matches @db.Date
   if (Number.isNaN(cookedOn.getTime()))
     return NextResponse.json({ error: "Invalid date" }, { status: 400 });
 
   const notes =
-    typeof body.notes === "string" && body.notes.trim() !== "" ? body.notes.trim() : null;
+    typeof body.notes === "string" && body.notes.trim() !== ""
+      ? body.notes.trim()
+      : null;
   if (notes && notes.length > 5000)
     return NextResponse.json({ error: "Notes are too long" }, { status: 400 });
 
+  // 0.1–5.0 stars, rounded to one decimal, or null (not rated). Anything else is ignored.
+  const ratingInput = Number(body.rating);
+  const rating =
+    body.rating != null &&
+    Number.isFinite(ratingInput) &&
+    ratingInput >= 0.1 &&
+    ratingInput <= 5
+      ? Math.round(ratingInput * 10) / 10
+      : null;
+
   const photoUrl = typeof body.photoUrl === "string" ? body.photoUrl : null;
+  const photoKey = photoUrl ? cleanFileKey(body.photoKey) : null; // lets us delete the file later
   if (photoUrl && !photoUrl.startsWith("https://"))
     return NextResponse.json({ error: "Invalid photo URL" }, { status: 400 });
 
@@ -38,15 +57,19 @@ export async function POST(req: Request) {
     where: { id: recipeId, userId: session.user.id },
     select: { id: true },
   });
-  if (!recipe) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!recipe)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   try {
     const entry = await prisma.recipeEntry.create({
-      data: { recipeId, cookedOn, notes, photoUrl },
+      data: { recipeId, cookedOn, notes, rating, photoUrl, photoKey },
     });
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {
     console.error("POST /api/entries failed:", error);
-    return NextResponse.json({ error: "Could not save entry" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not save entry" },
+      { status: 500 },
+    );
   }
 }

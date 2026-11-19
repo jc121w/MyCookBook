@@ -3,9 +3,10 @@
 import type { RecipeEntry } from "@prisma/client";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { ImagePlus, X } from "lucide-react";
-import { useEffect, useState, type DragEvent } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { PhotoPicker } from "@/components/form/PhotoPicker";
+import { StarInput } from "./StarRating";
 import { useUploadThing } from "@/lib/uploadthing";
 
 const MAX_PHOTO_MB = 8; // keep in sync with maxFileSize in api/uploadthing/core.ts
@@ -36,8 +37,7 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
 
   // The photo lives outside react-hook-form: it's a File object, not text.
   const [photo, setPhoto] = useState<File | null>(null);
-  const [photoError, setPhotoError] = useState<string | null>(null);
-  const preview = usePreviewUrl(photo);
+  const [rating, setRating] = useState<number | null>(null); // stars live outside RHF, like the photo
 
   const { startUpload } = useUploadThing("entryPhoto");
 
@@ -45,9 +45,11 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
     mutationFn: async (values: EntryFormValues) => {
       // 1. Upload the photo straight to UploadThing (not through our API)
       let photoUrl: string | null = null;
+      let photoKey: string | null = null;
       if (photo) {
         const uploaded = await startUpload([photo]);
         photoUrl = uploaded?.[0]?.ufsUrl ?? null;
+        photoKey = uploaded?.[0]?.key ?? null; // needed to delete the file later
         if (!photoUrl) throw new Error("The photo didn't upload. Try again.");
       }
       // 2. Save the entry with the photo's URL
@@ -55,26 +57,14 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
         recipeId,
         cookedOn: values.cookedOn,
         notes: values.notes,
+        rating,
         photoUrl,
+        photoKey,
       });
       return data;
     },
     onSuccess: onSaved,
   });
-
-  function pickPhoto(file: File | undefined) {
-    setPhotoError(null);
-    if (!file) return;
-    if (!file.type.startsWith("image/")) return setPhotoError("That file isn't an image.");
-    if (file.size > MAX_PHOTO_MB * 1024 * 1024)
-      return setPhotoError(`Photos can be up to ${MAX_PHOTO_MB} MB.`);
-    setPhoto(file);
-  }
-
-  function onDrop(e: DragEvent) {
-    e.preventDefault();
-    pickPhoto(e.dataTransfer.files[0]);
-  }
 
   const busyLabel = photo ? "Uploading photo…" : "Saving…";
 
@@ -85,7 +75,9 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
     >
       <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-6 pt-2 pb-4">
         <div>
-          <p className="text-xs font-semibold tracking-widest uppercase opacity-60">New entry</p>
+          <p className="text-xs font-semibold tracking-widest uppercase opacity-60">
+            New entry
+          </p>
           <div className="divider my-0" />
         </div>
 
@@ -101,8 +93,21 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
               validate: (v) => v <= today() || "That date is in the future",
             })}
           />
-          {errors.cookedOn && <span className="text-error text-xs">{errors.cookedOn.message}</span>}
+          {errors.cookedOn && (
+            <span className="text-error text-xs">
+              {errors.cookedOn.message}
+            </span>
+          )}
         </label>
+
+        {/* ── Rating ── */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">
+            How did it turn out?{" "}
+            <span className="font-normal opacity-50">(optional)</span>
+          </span>
+          <StarInput value={rating} onChange={setRating} />
+        </div>
 
         {/* ── Photo ── */}
         <div className="flex flex-col gap-1.5">
@@ -110,48 +115,7 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
             Photo <span className="font-normal opacity-50">(optional)</span>
           </span>
 
-          {preview ? (
-            <div className="relative overflow-hidden rounded-lg">
-              <img src={preview} alt="Selected photo" className="aspect-[4/3] w-full object-cover" />
-              <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 bg-linear-to-t from-black/60 to-transparent p-2">
-                <label className="btn btn-sm">
-                  Change
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => pickPhoto(e.target.files?.[0])}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-circle"
-                  onClick={() => setPhoto(null)}
-                  aria-label="Remove photo"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            // The whole box is a <label>, so clicking anywhere opens the file picker.
-            <label
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={onDrop}
-              className="border-base-300 hover:border-primary hover:bg-base-200/60 flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-center transition-colors"
-            >
-              <ImagePlus className="h-9 w-9 opacity-40" strokeWidth={1.5} />
-              <span className="text-sm font-medium">Add a photo</span>
-              <span className="text-xs opacity-50">Tap to choose or drop here · up to {MAX_PHOTO_MB} MB</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => pickPhoto(e.target.files?.[0])}
-              />
-            </label>
-          )}
-          {photoError && <span className="text-error text-xs">{photoError}</span>}
+          <PhotoPicker file={photo} onChange={setPhoto} maxMb={MAX_PHOTO_MB} />
         </div>
 
         {/* ── Notes ── */}
@@ -163,9 +127,16 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
             rows={5}
             placeholder="What did you change? How did it turn out?"
             className="textarea textarea-bordered w-full font-serif text-base leading-relaxed"
-            {...register("notes", { maxLength: { value: 5000, message: "Keep it under 5,000 characters" } })}
+            {...register("notes", {
+              maxLength: {
+                value: 5000,
+                message: "Keep it under 5,000 characters",
+              },
+            })}
           />
-          {errors.notes && <span className="text-error text-xs">{errors.notes.message}</span>}
+          {errors.notes && (
+            <span className="text-error text-xs">{errors.notes.message}</span>
+          )}
         </label>
 
         {save.error && (
@@ -179,13 +150,23 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
 
       {/* ── Actions (same spot as the page controls) ── */}
       <div className="border-base-300 flex items-center justify-end gap-2 border-t p-3">
-        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={save.isPending}>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={onCancel}
+          disabled={save.isPending}
+        >
           Cancel
         </button>
-        <button type="submit" className="btn btn-primary" disabled={save.isPending}>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={save.isPending}
+        >
           {save.isPending ? (
             <>
-              <span className="loading loading-spinner loading-sm" /> {busyLabel}
+              <span className="loading loading-spinner loading-sm" />{" "}
+              {busyLabel}
             </>
           ) : (
             "Save entry"
@@ -194,16 +175,4 @@ export function EntryForm({ recipeId, onCancel, onSaved }: EntryFormProps) {
       </div>
     </form>
   );
-}
-
-// A temporary browser URL for previewing a picked File, released when it changes.
-function usePreviewUrl(file: File | null) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!file) return setUrl(null);
-    const objectUrl = URL.createObjectURL(file);
-    setUrl(objectUrl);
-    return () => URL.revokeObjectURL(objectUrl); // free memory
-  }, [file]);
-  return url;
 }

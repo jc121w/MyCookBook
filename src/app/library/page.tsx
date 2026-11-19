@@ -3,12 +3,10 @@ import { useRef } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { RecipeCard } from "@/components/recipes/RecipeCard";
 import type { BookWithCount } from "../types";
-import { RecipeCardSkeleton } from "@/components/recipes/RecipeCardSkeleton";
-import { grid } from "@/lib/utils/recipe";
 import RedirectMessage from "@/components/form/RedirectMessage";
 import RecipeForm from "@/components/form/RecipeForm";
+import { libraryQuery } from "@/lib/library";
 import { BookShelf } from "@/components/journal/BookShelf";
 
 const Library = () => {
@@ -17,20 +15,14 @@ const Library = () => {
     data: recipes,
     isLoading: isLoadingRecipes,
     error: recipesError,
-  } = useQuery<BookWithCount[]>({
-    queryKey: ["recipes"],
-    queryFn: async () => {
-      const response = await axios.get("/api/library");
-      return response.data;
-    },
-  });
+  } = useQuery(libraryQuery); // shared with search (src/lib/library.ts)
   const modalRef = useRef<HTMLDialogElement>(null);
   if (isLoadingRecipes) {
     return (
-      <div className={grid}>
-        {Array.from({ length: 8 }).map((_, i) => (
-          <RecipeCardSkeleton key={i} />
-        ))}
+      // Bookcase-shaped placeholder while the shelf loads
+      <div className="mx-auto w-full max-w-5xl px-4 py-10">
+        <div className="skeleton mb-3 h-8 w-full max-w-xs" />
+        <div className="skeleton h-[520px] w-full rounded-md" />
       </div>
     );
   }
@@ -39,20 +31,19 @@ const Library = () => {
   }
 
   return (
-    <div className="m-auto flex max-w-4xl flex-col items-start justify-start gap-10">
-      <div className="mx-auto max-w-6xl px-4 py-10">
-        <button className="btn" onClick={() => modalRef.current?.showModal()}>
-          Create
-        </button>
-        <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
-          <RecipeForm />
-          {/* Click-outside-to-close: must be a direct child of .modal */}
-          <form method="dialog" className="modal-backdrop">
-            <button>close</button>
-          </form>
-        </dialog>
-      </div>
-      <BookShelf books={recipes ?? []} />
+    <div className="mx-auto w-full max-w-5xl px-4 py-10">
+      {/* Opened by the "New book" slot on the shelf */}
+      <dialog ref={modalRef} className="modal modal-bottom sm:modal-middle">
+        <RecipeForm onDone={() => modalRef.current?.close()} />
+        {/* Click-outside-to-close: must be a direct child of .modal */}
+        <form method="dialog" className="modal-backdrop">
+          <button>close</button>
+        </form>
+      </dialog>
+      <BookShelf
+        books={recipes ?? []}
+        onAddBook={() => modalRef.current?.showModal()}
+      />
     </div>
   );
 };

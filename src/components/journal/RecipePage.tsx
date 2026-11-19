@@ -127,8 +127,32 @@ export function RecipePage({ book }: { book: BookWithCount }) {
       </Section>
 
       {/* ── Instructions ── */}
-      <Section title="Instructions">
-        {book.url ? (
+      <Section
+        title="Instructions"
+        aside={
+          book.instructions.length > 0
+            ? `${book.instructions.length} steps`
+            : undefined
+        }
+      >
+        {/* Your own steps (custom recipes) */}
+        {book.instructions.length > 0 && (
+          <ol className="flex flex-col gap-3">
+            {book.instructions.map((step, i) => (
+              <li key={`${i}-${step}`} className="flex gap-3">
+                <span className="bg-base-200 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold">
+                  {i + 1}
+                </span>
+                <p className="font-serif leading-relaxed whitespace-pre-line">
+                  {step}
+                </p>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {/* Link to the original (Edamam recipes, or a custom recipe with a link) */}
+        {book.url && (
           <a
             href={book.url}
             target="_blank"
@@ -136,14 +160,18 @@ export function RecipePage({ book }: { book: BookWithCount }) {
             className="border-base-300 hover:bg-base-200 flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors"
           >
             <span className="text-sm">
-              Step-by-step on{" "}
+              {book.instructions.length > 0
+                ? "Original recipe on "
+                : "Step-by-step on "}
               <span className="font-semibold">
                 {book.source || "the original site"}
               </span>
             </span>
             <ExternalLink className="h-4 w-4 shrink-0 opacity-60" />
           </a>
-        ) : (
+        )}
+
+        {book.instructions.length === 0 && !book.url && (
           <p className="text-sm italic opacity-40">No instructions saved</p>
         )}
       </Section>

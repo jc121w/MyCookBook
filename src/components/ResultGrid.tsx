@@ -1,30 +1,19 @@
-import { EdamamSearchResponse } from "@/app/types";
-import { RecipeCardSkeleton } from "./recipes/RecipeCardSkeleton";
-import { RecipeCard } from "./recipes/RecipeCard";
+import type { SearchPage } from "@/lib/edamam";
 import { extractRecipeId, grid } from "@/lib/utils/recipe";
-import { SaveButton } from "./SaveButton";
+import { AddToShelfButton } from "./AddToShelfButton";
+import { RecipeCard } from "./recipes/RecipeCard";
+import { RecipeCardSkeleton } from "./recipes/RecipeCardSkeleton";
 
+// Results for one page of a search: skeletons while loading, then cards
 export const ResultsGrid = ({
   isLoading,
   error,
-  hasQuery,
   hits,
 }: {
   isLoading: boolean;
   error: unknown;
-  hasQuery: boolean;
-  hits?: EdamamSearchResponse["hits"];
+  hits?: SearchPage["hits"];
 }) => {
-  // Before the user has searched — invite, don't show emptiness
-  if (!hasQuery) {
-    return (
-      <div className="text-base-content/50 py-20 text-center">
-        Start by searching for a dish or ingredient above.
-      </div>
-    );
-  }
-
-  // Loading — skeletons that match the card shape feel far better than "Loading…"
   if (isLoading) {
     return (
       <div className={grid}>
@@ -45,25 +34,29 @@ export const ResultsGrid = ({
 
   if (!hits || hits.length === 0) {
     return (
-      <div className="text-base-content/50 py-20 text-center">
-        No recipes found. Try a different search.
+      <div className="py-16 text-center">
+        <p className="font-serif text-lg">No recipes found.</p>
+        <p className="text-base-content/60 mt-1 text-sm">
+          Try a simpler search, or remove a filter.
+        </p>
       </div>
     );
   }
 
   return (
     <div className={grid}>
-      {hits.map((hit) => {
-        const id = extractRecipeId(hit.recipe.uri);
+      {hits.map(({ recipe }) => {
+        const id = extractRecipeId(recipe.uri);
         return (
           <RecipeCard
             key={id}
-            recipe={hit.recipe}
+            recipe={recipe}
             href={`/recipe/${id}`}
+            // The detail page reads this instead of calling Edamam again
             onClick={() =>
-              localStorage.setItem(`recipe_${id}`, JSON.stringify(hit.recipe))
+              localStorage.setItem(`recipe_${id}`, JSON.stringify(recipe))
             }
-            action={<SaveButton recipeid={id} recipe={hit.recipe} />}
+            action={<AddToShelfButton recipe={recipe} edamamId={id} />}
           />
         );
       })}

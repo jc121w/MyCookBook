@@ -84,6 +84,7 @@ model Recipe {
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   label           String
   image           String?
+  imageKey        String? // UploadThing file key, so the file can be deleted (null for Edamam images)
   source          String
   yield           Int
   url             String?
@@ -91,6 +92,7 @@ model Recipe {
   dietLabels      String[]      @default([])
   healthLabels    String[]      @default([])
   ingredientLines String[]      @default([])
+  instructions    String[]      @default([]) // steps for user-created recipes (Edamam only links out)
   dishType        String[]      @default([])
   cuisineType     String[]      @default([])
   mealType        String[]      @default([])
@@ -111,7 +113,9 @@ model RecipeEntry {
   recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   cookedOn  DateTime @db.Date
   notes     String?
+  rating    Float? // 0.1–5.0 stars (one decimal), null = not rated
   photoUrl  String?
+  photoKey  String? // UploadThing file key, so the file can be deleted with the entry
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

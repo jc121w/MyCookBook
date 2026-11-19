@@ -11,6 +11,7 @@ type RecipeCardProps = {
     calories: number | null;
     totalTime: number | null;
     cuisineType: string[] | null;
+    yield?: number; // servings; lets us show calories per serving
   };
   href?: string;
   onClick?: () => void;
@@ -22,7 +23,6 @@ export const RecipeCard = ({
   onClick,
   action,
 }: RecipeCardProps) => {
-  console.log(recipe.image);
   return (
     <div className="group card bg-base-100 ring-base-300 h-full overflow-hidden shadow-sm ring-1 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl">
       <figure className="h-44 w-full overflow-hidden">
@@ -47,7 +47,10 @@ export const RecipeCard = ({
           {recipe.calories != null && (
             <span className="badge badge-neutral gap-1">
               <Flame className="h-3 w-3" />
-              {Math.round(recipe.calories)} cal
+              {/* Edamam's calories are for the whole recipe */}
+              {recipe.yield
+                ? `${Math.round(recipe.calories / recipe.yield)} cal / serving`
+                : `${Math.round(recipe.calories)} cal`}
             </span>
           )}
           {recipe.totalTime != null && recipe.totalTime > 0 && (
@@ -71,6 +74,9 @@ export const RecipeCard = ({
             ))}
           </div>
         )}
+
+        {/* The card's action (e.g. Add to shelf): above the stretched link so it's clickable */}
+        {action && <div className="relative z-10 mt-1">{action}</div>}
       </div>
       {href && (
         <Link
@@ -79,14 +85,6 @@ export const RecipeCard = ({
           aria-label={recipe.label}
           className="absolute inset-0 z-0"
         />
-      )}
-      {action && (
-        <div
-          className="absolute top-3 right-3 z-10"
-          onClick={(e) => e.preventDefault()}
-        >
-          {action}
-        </div>
       )}
     </div>
   );

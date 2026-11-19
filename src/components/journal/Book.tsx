@@ -2,21 +2,25 @@
 
 import type { RecipeEntry } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { BookWithCount, BookWithEntries } from "@/app/types";
 import axios from "axios";
 import { EntryForm } from "./EntryForm";
 import { CoverPage } from "./CoverPage";
+import { EntryDetail, JournalList } from "./JournalPage";
 import { RecipePage } from "./RecipePage";
 
-// A page is either the cover or one journal entry.
+// The book has three pages: cover, the recipe, and the journal (a list of entries).
 // `kind` is the tag that tells TypeScript which one you have.
-type Page =
-  | { kind: "cover" }
-  | { kind: "recipe" }
-  | { kind: "entry"; entry: RecipeEntry };
+type Page = { kind: "cover" } | { kind: "recipe" } | { kind: "journal" };
+const PAGES: Page[] = [
+  { kind: "cover" },
+  { kind: "recipe" },
+  { kind: "journal" },
+];
+const JOURNAL_PAGE = 2;
 
 // Page change: the old page slides out and fades, then the new page slides in from
 // the side you're heading toward. `d` is the direction: 1 = ▶, -1 = ◀.
@@ -29,9 +33,6 @@ const pageSlide: Variants = {
   center: { x: 0, opacity: 1 },
   exit: (d: number) => ({ x: -d * SLIDE, opacity: 0 }),
 };
-
-// The main action's wording, in one place so it's easy to change
-const LOG_LABEL = "Add a page";
 
 type BookProps = {
   book: BookWithCount;
@@ -49,24 +50,31 @@ export function Book({ book, onClose }: BookProps) {
     },
   });
 
-  // Cover first, then one page per entry.
-  const pages: Page[] = [
-    { kind: "cover" },
-    { kind: "recipe" }, // always page 2
-    ...entries.map((entry) => ({ kind: "entry" as const, entry })),
-  ];
+  const pages = PAGES;
 
   // index + direction live in ONE state so they always change together.
-  const [[index, dir], setPage] = useState<[number, number]>([0, 0]);
-
-  // Clamp: if entries shrink (e.g. after a delete), don't point past the end.
-  const current = Math.min(index, pages.length - 1);
+  const [[current, dir], setPage] = useState<[number, number]>([0, 0]);
   const page = pages[current];
+
+  // Which entry is open full-size on the journal page (null = the list)
+  const [openEntryId, setOpenEntryId] = useState<number | null>(null);
+  const openEntry = entries.find((e) => e.id === openEntryId);
 
   // ── Writing a new entry ──
   const queryClient = useQueryClient();
+
+  // ── Deleting ──
+  // Both refetch the shelf too, so its counts and books stay in sync.
+  async function deleteEntry(entryId: number) {
+    await axios.delete(`/api/entries/${entryId}`);
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["entries", book.id] }),
+      queryClient.invalidateQueries({ queryKey: ["recipes"] }),
+    ]);
+    setOpenEntryId(null); // back to the list
+  }
+
   const [writing, setWriting] = useState(false);
-  const [jumpTo, setJumpTo] = useState<number | null>(null); // id of the entry just saved
 
   async function handleSaved(entry: RecipeEntry) {
     // Refetch this book's entries AND the shelf (so "Cooked N times" updates).
@@ -76,41 +84,26 @@ export function Book({ book, onClose }: BookProps) {
       queryClient.invalidateQueries({ queryKey: ["recipes"] }),
     ]);
     setWriting(false);
-    setJumpTo(entry.id);
+    // Show what you just wrote: the journal page, with the new entry open
+    setPage([JOURNAL_PAGE, 1]);
+    setOpenEntryId(entry.id);
   }
-
-  // After saving, flip to the new entry's page (wherever its date puts it).
-  useEffect(() => {
-    if (jumpTo === null) return;
-    const i = entries.findIndex((e) => e.id === jumpTo);
-    if (i >= 0) {
-      setPage([i + 2, 1]); // +2: cover and recipe pages come first
-      setJumpTo(null);
-    }
-  }, [jumpTo, entries]);
 
   function go(step: 1 | -1) {
     const next = current + step;
     if (next < 0 || next >= pages.length) return;
+    setOpenEntryId(null); // leaving the journal closes any open entry
     setPage([next, step]);
   }
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between p-2">
-        {/* Actions bar: the book's one primary action (left) and close (right) */}
-        {writing ? (
-          <span className="pl-4 text-xs tracking-wide opacity-60">
-            New entry
-          </span>
-        ) : (
-          <button
-            className="btn btn-sm gap-1.5 font-serif text-sm font-normal hover:opacity-100"
-            onClick={() => setWriting(true)}
-          >
-            <Plus className="h-4 w-4" /> {LOG_LABEL}
-          </button>
-        )}
+        {/* Top bar: what you're doing (left) and close (right).
+            Adding a page lives on the journal page itself, as its first card. */}
+        <span className="pl-4 text-xs tracking-wide opacity-60">
+          {writing ? "New entry" : ""}
+        </span>
         <button
           className="btn btn-circle btn-ghost btn-sm"
           onClick={onClose}
@@ -142,6 +135,7 @@ export function Book({ book, onClose }: BookProps) {
                 animate="center"
                 exit="exit"
                 transition={PAGE_TRANSITION}
+                layoutScroll // lets rows grow from the right spot even when the list is scrolled
                 className="absolute inset-0 overflow-y-auto px-6 pb-4"
               >
                 {page.kind === "cover" && (
@@ -152,8 +146,28 @@ export function Book({ book, onClose }: BookProps) {
                   />
                 )}
                 {page.kind === "recipe" && <RecipePage book={book} />}
-                {page.kind === "entry" && <EntryPage entry={page.entry} />}
+                {page.kind === "journal" && (
+                  <JournalList
+                    entries={entries}
+                    isLoading={isLoading}
+                    onOpen={setOpenEntryId}
+                    onAdd={() => setWriting(true)}
+                  />
+                )}
               </motion.div>
+            </AnimatePresence>
+
+            {/* The open entry sits OUTSIDE the scrolling page so it always covers
+                the whole page area, then grows from its row via the shared layoutId */}
+            <AnimatePresence>
+              {page.kind === "journal" && openEntry && (
+                <EntryDetail
+                  key={openEntry.id}
+                  entry={openEntry}
+                  onBack={() => setOpenEntryId(null)}
+                  onDelete={() => deleteEntry(openEntry.id)}
+                />
+              )}
             </AnimatePresence>
           </div>
 
@@ -168,7 +182,7 @@ export function Book({ book, onClose }: BookProps) {
             </button>
             {/* Navigation bar: arrows + where you are */}
             <span className="text-sm tabular-nums opacity-70">
-              {isLoading ? "Loading…" : `${current + 1} / ${pages.length}`}
+              {`${current + 1} / ${pages.length}`}
             </span>
             <button
               className="btn btn-circle"
@@ -180,43 +194,6 @@ export function Book({ book, onClose }: BookProps) {
             </button>
           </div>
         </>
-      )}
-    </div>
-  );
-}
-
-function EntryPage({ entry }: { entry: RecipeEntry }) {
-  // After axios, cookedOn is a string even though the type says Date; new Date() handles both.
-  // timeZone "UTC" because @db.Date is stored as midnight UTC (otherwise it shows a day early).
-  const date = new Date(entry.cookedOn).toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-
-  return (
-    <div className="flex flex-col gap-4 pt-2">
-      <p className="text-xs font-semibold tracking-widest uppercase opacity-60">
-        {date}
-      </p>
-      <div className="divider my-0" />
-
-      {entry.photoUrl && (
-        <img
-          src={entry.photoUrl}
-          alt=""
-          className="aspect-[4/3] w-full rounded-lg object-cover"
-        />
-      )}
-
-      {entry.notes ? (
-        <p className="font-serif text-lg leading-relaxed whitespace-pre-line">
-          {entry.notes}
-        </p>
-      ) : (
-        <p className="italic opacity-40">No notes</p>
       )}
     </div>
   );

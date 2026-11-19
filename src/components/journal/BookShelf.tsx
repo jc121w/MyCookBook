@@ -1,7 +1,10 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { Fragment, useEffect, useRef, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import type { BookWithCount } from "@/app/types";
 import { Book } from "./Book";
 
@@ -179,9 +182,20 @@ function packShelves(
   return shelves;
 }
 
-function Bookend() {
+// Bookends and label plates glide to their new spots when you regroup, with the
+// same timing as the books (shared layoutId per section). Ones that don't exist in
+// the new grouping fade in, so nothing pops or jumps.
+const SLIDE_IN = { opacity: 0 };
+const SETTLED = { opacity: 1 };
+
+function Bookend({ id }: { id: string }) {
   return (
-    <div
+    <motion.div
+      layoutId={`bookend-${id}`}
+      layout="position" // move only; never stretch
+      initial={SLIDE_IN}
+      animate={SETTLED}
+      transition={{ duration: 0.25, ...LAYOUT_TRANSITION }}
       aria-hidden
       className="shrink-0 rounded-t-[2px]"
       style={{
@@ -202,15 +216,47 @@ const BRASS = "linear-gradient(180deg, #ecd28c, #c9a24c 55%, #a8832f)";
 
 type BookShelfProps = {
   books: BookWithCount[];
+  onAddBook?: () => void; // the "Create recipe" button above the bookcase
 };
 
-export function BookShelf({ books }: BookShelfProps) {
+export function BookShelf({ books, onAddBook }: BookShelfProps) {
   // Which book is open. null = shelf only.
   const [openId, setOpenId] = useState<number | null>(null);
   const open = books.find((b) => b.id === openId);
   const close = () => setOpenId(null);
   // Was the book pulled out (tilted) when clicked? Then the open book starts tilted too.
   const [openTilted, setOpenTilted] = useState(false);
+
+  // ── Drag a book to the trash to remove it ──
+  const trashRef = useRef<HTMLDivElement>(null);
+  const [dragging, setDragging] = useState(false); // shows the trash can
+  const [overTrash, setOverTrash] = useState(false); // highlights it
+  const [toRemove, setToRemove] = useState<BookWithCount | null>(null); // asks to confirm
+
+  // Is the pointer over the trash can? info.point is page coordinates, rects are viewport.
+  function isOverTrash(point: { x: number; y: number }) {
+    const rect = trashRef.current?.getBoundingClientRect();
+    if (!rect) return false;
+    const x = point.x - window.scrollX;
+    const y = point.y - window.scrollY;
+    const slop = 16; // a little forgiveness around the edge
+    return (
+      x >= rect.left - slop &&
+      x <= rect.right + slop &&
+      y >= rect.top - slop &&
+      y <= rect.bottom + slop
+    );
+  }
+
+  const queryClient = useQueryClient();
+  const removeBook = useMutation({
+    mutationFn: (bookId: number) => axios.delete(`/api/library/${bookId}`),
+    onSuccess: async (_res, bookId) => {
+      setToRemove(null);
+      queryClient.removeQueries({ queryKey: ["entries", bookId] });
+      await queryClient.invalidateQueries({ queryKey: ["recipes"] });
+    },
+  });
 
   const [groupBy, setGroupBy] = useState<GroupBy>("dishType");
   const [shelfRef, shelfWidth] = useWidth<HTMLDivElement>();
@@ -224,25 +270,38 @@ export function BookShelf({ books }: BookShelfProps) {
           shelfWidth - SHELF_PADDING_X * 2,
         )
       : [];
+
   // Always show at least two shelves so a small library still looks like a bookcase
   while (shelfWidth > 0 && shelves.length < 2) shelves.push([]);
 
-  if (books.length === 0) {
-    return (
-      <p className="w-full py-16 text-center italic opacity-60">
-        Your shelf is empty. Save a recipe to start a book.
-      </p>
-    );
-  }
-
   return (
     <>
-      {/* Shelf controls: how many books, and how they're sorted */}
-      <div className="mb-3 flex w-full flex-wrap items-center justify-between gap-2">
-        <p className="text-sm opacity-60">
-          {books.length} {books.length === 1 ? "book" : "books"}
-        </p>
-        <div className="flex items-center gap-2">
+      {/* Shelf controls: create (always here, never moves) on the left, sorting on the right */}
+      <div className="mb-3 flex w-full flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          {onAddBook && (
+            <button
+              type="button"
+              onClick={onAddBook}
+              className="btn btn-sm gap-1.5 border-0 font-serif text-[#3b2a14] hover:brightness-105"
+              style={{
+                background: BRASS,
+                boxShadow:
+                  "inset 0 1px 0 rgb(255 255 255 / .5), 0 1px 3px rgb(0 0 0 / .35)",
+              }}
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.25} /> Create recipe
+            </button>
+          )}
+          <p className="text-sm opacity-60">
+            {books.length === 0
+              ? "Your shelf is empty. Create your first recipe."
+              : `${books.length} ${books.length === 1 ? "book" : "books"}`}
+          </p>
+        </div>
+        <div
+          className={`flex items-center gap-2 ${books.length === 0 ? "invisible" : ""}`}
+        >
           <span className="text-xs opacity-60">Sort shelves by</span>
           <div role="tablist" className="tabs tabs-box tabs-sm">
             {GROUP_OPTIONS.map((option) => (
@@ -288,7 +347,7 @@ export function BookShelf({ books }: BookShelfProps) {
               >
                 {sections.map((section, j) => (
                   <Fragment key={`${section.name}-${j}`}>
-                    {j > 0 && <Bookend />}
+                    {j > 0 && <Bookend id={`${groupBy}-${section.name}`} />}
                     <div
                       className="relative flex items-end"
                       style={{
@@ -307,12 +366,26 @@ export function BookShelf({ books }: BookShelfProps) {
                             setOpenTilted(fromPulledOut);
                             setOpenId(book.id);
                           }}
+                          onDragStart={() => setDragging(true)}
+                          onDragMove={(point) =>
+                            setOverTrash(isOverTrash(point))
+                          }
+                          onDragEnd={(point) => {
+                            if (isOverTrash(point)) setToRemove(book);
+                            setDragging(false);
+                            setOverTrash(false);
+                          }}
                         />
                       ))}
 
                       {/* Brass plate on the ledge, under the section's first book */}
                       {section.showLabel && (
-                        <span
+                        <motion.span
+                          layoutId={`plate-${groupBy}-${section.name}`}
+                          layout="position"
+                          initial={SLIDE_IN}
+                          animate={SETTLED}
+                          transition={{ duration: 0.25, ...LAYOUT_TRANSITION }}
                           className="absolute left-0 z-[2] flex h-5 items-center gap-1.5 rounded-sm px-2.5 text-[10px] font-semibold tracking-[0.18em] whitespace-nowrap uppercase"
                           style={{
                             top: "calc(100% + 5px)", // centered on the ledge's front edge
@@ -324,7 +397,7 @@ export function BookShelf({ books }: BookShelfProps) {
                         >
                           {section.name}
                           <span className="opacity-60">· {section.count}</span>
-                        </span>
+                        </motion.span>
                       )}
                     </div>
                   </Fragment>
@@ -395,11 +468,129 @@ export function BookShelf({ books }: BookShelfProps) {
         )}
       </AnimatePresence>
 
+      {/* Hint, so people know removing exists */}
+      {books.length > 0 && (
+        <p className="mt-2 text-center text-xs opacity-40">
+          Drag a book off the shelf to remove it.
+        </p>
+      )}
+
+      {/* Trash can: only while a book is being dragged */}
+      <AnimatePresence>
+        {dragging && (
+          <motion.div
+            ref={trashRef}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0, scale: overTrash ? 1.15 : 1 }}
+            exit={{ opacity: 0, y: 24 }}
+            transition={{ duration: 0.2, ease: EASE }}
+            className={`fixed bottom-8 left-1/2 z-30 flex -translate-x-1/2 flex-col items-center gap-1.5 rounded-2xl px-6 py-4 shadow-2xl transition-colors ${
+              overTrash
+                ? "bg-error text-error-content"
+                : "bg-base-100 text-base-content"
+            }`}
+          >
+            <Trash2 className="h-7 w-7" />
+            <span className="text-xs font-medium">
+              {overTrash ? "Let go to remove" : "Drag here to remove"}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirm before deleting anything */}
+      <AnimatePresence>
+        {toRemove && (
+          <motion.div
+            className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !removeBook.isPending && setToRemove(null)}
+          >
+            <motion.div
+              role="alertdialog"
+              aria-labelledby="remove-title"
+              initial={{ scale: 0.95, y: 8 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 8 }}
+              transition={{ duration: 0.18, ease: EASE }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-base-100 w-full max-w-sm rounded-xl p-6 shadow-2xl"
+            >
+              <h2 id="remove-title" className="font-serif text-xl font-bold">
+                Remove &ldquo;{toRemove.label}&rdquo;?
+              </h2>
+              <p className="mt-2 text-sm opacity-70">
+                {toRemove._count.entries > 0
+                  ? `Its ${toRemove._count.entries === 1 ? "journal entry" : `${toRemove._count.entries} journal entries`} and photos will be deleted too. `
+                  : ""}
+                This can&apos;t be undone.
+              </p>
+              {removeBook.isError && (
+                <p className="text-error mt-3 text-sm">
+                  Couldn&apos;t remove it. Try again.
+                </p>
+              )}
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    setToRemove(null);
+                    removeBook.reset();
+                  }}
+                  disabled={removeBook.isPending}
+                  autoFocus
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-error"
+                  onClick={() => removeBook.mutate(toRemove.id)}
+                  disabled={removeBook.isPending}
+                >
+                  {removeBook.isPending ? (
+                    <span className="loading loading-spinner loading-sm" />
+                  ) : (
+                    "Remove"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* TODO(you, stretch): close the book when Escape is pressed.
           Hint: useEffect that adds a "keydown" listener on window while `open` is set,
           and removes it in the cleanup function. */}
     </>
   );
+}
+
+// ── Press-and-hold helpers ──
+const RESTING = {
+  scale: 1,
+  rotate: 0,
+  boxShadow: "2px 3px 5px rgb(0 0 0 / .45)",
+};
+const PICKED_UP = {
+  scale: 1.08,
+  rotate: [0, -4, 4, -3, 2, 0], // keyframes: a short shake, like it buzzed in your hand
+  boxShadow: "10px 16px 22px rgb(0 0 0 / .5)",
+  transition: { duration: 0.35, ease: "easeOut" as const },
+};
+const LONG_PRESS_MS = 400;
+const MOVE_TOLERANCE = 8; // px a finger may wobble during the hold
+
+// While a held book is being dragged, stop the page from scrolling under the finger.
+// (touchmove must be non-passive for preventDefault to work.)
+const preventScroll = (e: TouchEvent) => e.preventDefault();
+function blockTouchScroll() {
+  document.addEventListener("touchmove", preventScroll, { passive: false });
+}
+function unblockTouchScroll() {
+  document.removeEventListener("touchmove", preventScroll);
 }
 
 // The hover pose. The open book starts from the same tilt, so there's no snap.
@@ -408,9 +599,15 @@ const PULLED_OUT = { y: -18, rotate: -4, scale: 1.04 };
 function Spine({
   book,
   onOpen,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
 }: {
   book: BookWithCount;
   onOpen: (fromPulledOut: boolean) => void;
+  onDragStart: () => void;
+  onDragMove: (point: { x: number; y: number }) => void;
+  onDragEnd: (point: { x: number; y: number }) => void;
 }) {
   const look = spineLook(book.id);
   const count = book._count.entries;
@@ -423,13 +620,70 @@ function Spine({
 
   // Is it pulled out right now? The open book starts from this pose if so.
   const [hovered, setHovered] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  // The browser still fires a click when you let go after dragging; this ignores it
+  const justDragged = useRef(false);
+
+  // ── Press-and-hold to pick up (touch only) ──
+  // On a phone, a swipe across the books should scroll the page, so a touch only
+  // picks a book up after holding still for LONG_PRESS_MS. A mouse drags right away.
+  const dragControls = useDragControls();
+  const pressTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const pickedUp = useRef(false); // a hold fired: the lift-off shouldn't count as a click
+  const [held, setHeld] = useState(false); // drives the "picked up" lift + wiggle
+
+  function cancelPress() {
+    if (pressTimer.current) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    pressStart.current = null;
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    if (e.pointerType === "mouse") {
+      dragControls.start(e); // mouse: drag immediately (a plain click still opens the book)
+      return;
+    }
+    const pointer = e.nativeEvent; // kept for when the timer fires
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    pressTimer.current = window.setTimeout(() => {
+      pressTimer.current = null;
+      pickedUp.current = true;
+      navigator.vibrate?.(15); // haptic buzz where supported (Android; iOS Safari has no vibration API)
+      setHeld(true); // visual buzz for everyone: lift + wiggle
+      blockTouchScroll(); // from here on, finger movement drags the book, not the page
+      dragControls.start(pointer);
+    }, LONG_PRESS_MS);
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    // Moved before the hold finished → it's a scroll/swipe, not a pick-up
+    if (!pressTimer.current || !pressStart.current) return;
+    const moved = Math.hypot(
+      e.clientX - pressStart.current.x,
+      e.clientY - pressStart.current.y,
+    );
+    if (moved > MOVE_TOLERANCE) cancelPress();
+  }
+
+  function onPointerEnd() {
+    setHeld(false);
+    cancelPress();
+    unblockTouchScroll();
+    setTimeout(() => (pickedUp.current = false), 0); // after the stray click
+  }
 
   return (
     // Wrapper holds the hover tag (the button itself clips its decorations).
     // z-20 on hover lifts book + tag above neighbors and the shelves.
-    <div className="relative shrink-0 focus-within:z-20 hover:z-20">
+    // z-40 while dragging, so the book passes over the trash can, not under it.
+    <div
+      className="relative shrink-0 focus-within:z-20 hover:z-20"
+      // inline, so it beats hover:z-20 (the pointer is always over the book while dragging)
+      style={isDragging ? { zIndex: 40 } : undefined}
+    >
       <AnimatePresence>
-        {hovered && (
+        {hovered && !isDragging && (
           <motion.div
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -455,7 +709,43 @@ function Spine({
 
       <motion.button
         layoutId={`book-${book.id}`} // same id as the open book → it grows from here
-        onClick={() => onOpen(hovered)}
+        onClick={() => {
+          if (justDragged.current || pickedUp.current) return;
+          onOpen(hovered);
+        }}
+        // Drag to remove: the book follows the pointer, then slides back to its spot.
+        // We start drags ourselves (dragListener off) to get press-and-hold on touch.
+        drag
+        dragListener={false}
+        dragControls={dragControls}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerEnd}
+        onPointerCancel={onPointerEnd}
+        onContextMenu={(e) => e.preventDefault()} // long-press shouldn't open a menu
+        dragSnapToOrigin
+        dragMomentum={false}
+        // Picked up by a hold: lifts (bigger, deeper shadow) with a quick wiggle, so you
+        // know it's ready to drag before you move. Resting values otherwise.
+        animate={held ? PICKED_UP : RESTING}
+        whileDrag={{
+          scale: 1.08,
+          rotate: -6,
+          boxShadow: "14px 22px 30px rgb(0 0 0 / .5)",
+        }}
+        onDragStart={() => {
+          justDragged.current = true;
+          setIsDragging(true);
+          onDragStart();
+        }}
+        onDrag={(_, info) => onDragMove(info.point)}
+        onDragEnd={(_, info) => {
+          setIsDragging(false);
+          setHeld(false);
+          onDragEnd(info.point);
+          unblockTouchScroll();
+          setTimeout(() => (justDragged.current = false), 0); // after the stray click
+        }}
         onHoverStart={() => setHovered(true)}
         onHoverEnd={() => setHovered(false)}
         // Pulled out: lifts off the shelf, tips toward you, and casts a bigger shadow.
@@ -475,6 +765,9 @@ function Spine({
           color: look.fg,
           transformOrigin: "bottom left",
           boxShadow: "2px 3px 5px rgb(0 0 0 / .45)",
+          touchAction: "pan-x pan-y", // let swipes scroll; a hold takes over (see blockTouchScroll)
+          WebkitTouchCallout: "none", // no iOS long-press preview/menu
+          userSelect: "none",
         }}
         aria-label={`${book.label}, ${logs}`}
       >
