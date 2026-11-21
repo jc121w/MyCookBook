@@ -220,12 +220,20 @@ const NEW_ENTRY_ID = "new-entry";
 
 // The new-entry form's page: grows from the "New entry" card and shrinks back into it
 // (Save or Cancel), the same way an entry opens and closes
-export function NewEntrySheet({ children }: { children: React.ReactNode }) {
+export function NewEntrySheet({
+  children,
+  hidden = false,
+}: {
+  children: React.ReactNode;
+  hidden?: boolean; // on another tab: invisible, but kept (with your draft) for when you return
+}) {
   return (
     <motion.div
       layoutId={NEW_ENTRY_ID}
       transition={{ duration: 0.35, ease: EASE, ...GROW }}
-      className="bg-base-100 absolute inset-0 z-10"
+      // invisible (not display:none) keeps its size, so it doesn't re-grow from
+      // nothing when shown again; it also can't be clicked or tabbed into
+      className={`bg-base-100 absolute inset-0 z-10 ${hidden ? "invisible" : ""}`}
       style={{ borderRadius: 0 }}
     >
       {/* The form fades in after the box starts growing, and out before it shrinks,
@@ -323,7 +331,9 @@ function Thumbnail({ entry }: { entry: RecipeEntry }) {
   return (
     <>
       {entry.photoUrl ? (
-        <img loading="lazy" decoding="async"
+        <img
+          loading="lazy"
+          decoding="async"
           src={entry.photoUrl}
           alt=""
           className="h-full w-full object-cover"
@@ -356,7 +366,13 @@ function MountedPhoto({ src }: { src: string }) {
   return (
     <span className="mx-auto block w-[88%] -rotate-1 bg-white p-2 shadow-md">
       <span className="relative block">
-        <img loading="lazy" decoding="async" src={src} alt="" className="aspect-[4/3] w-full object-cover" />
+        <img
+          loading="lazy"
+          decoding="async"
+          src={src}
+          alt=""
+          className="aspect-[4/3] w-full object-cover"
+        />
         <PhotoCorners size={20} />
       </span>
     </span>

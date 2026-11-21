@@ -382,8 +382,11 @@ export function BookShelf({
   useEffect(() => {
     if (openBookId == null || openedFromOutside.current === openBookId) return;
     if (shelfWidth === 0 || !books.some((b) => b.id === openBookId)) return;
-    openedFromOutside.current = openBookId;
     const timer = setTimeout(() => {
+      // Marked as opened only now, when it actually opens. (Marking it before the wait
+      // was a bug: arriving at /library reloads the shelf, which re-runs this effect,
+      // whose cleanup cancelled the timer, and the mark then stopped it from retrying.)
+      openedFromOutside.current = openBookId;
       setOpenTilted(false);
       setOpenId(openBookId);
     }, 350); // a beat to see the shelf first

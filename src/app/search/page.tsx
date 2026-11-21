@@ -354,7 +354,7 @@ function FilterSelect({
       className={`select select-sm h-8 w-auto rounded-full text-xs ${
         value
           ? "bg-primary text-primary-content border-primary"
-          : "border-base-content/15 hover:border-base-content/30 bg-transparent"
+          : "border-base-content/15 hover:border-base-content/30 bg-base-100" // solid: the open list inherits this background
       }`}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || null)}

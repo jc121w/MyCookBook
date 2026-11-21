@@ -267,7 +267,7 @@ export default function RecipeForm({
               <input
                 type="number"
                 inputMode="numeric"
-                className="input w-full"
+                className="input no-spinner w-full"
                 {...register("yield", {
                   setValueAs: toNumber,
                   required: "Required",
@@ -280,7 +280,7 @@ export default function RecipeForm({
                 <input
                   type="number"
                   inputMode="numeric"
-                  className="w-full min-w-0"
+                  className="no-spinner w-full min-w-0"
                   placeholder="45"
                   {...register("totalTime", {
                     setValueAs: toNumber,
@@ -298,7 +298,7 @@ export default function RecipeForm({
                 <input
                   type="number"
                   inputMode="numeric"
-                  className="w-full min-w-0"
+                  className="no-spinner w-full min-w-0"
                   placeholder="520"
                   {...register("caloriesPerServing", {
                     setValueAs: toNumber,
