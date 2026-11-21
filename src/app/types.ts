@@ -6,8 +6,12 @@ import type { Prisma } from "@prisma/client";
 // `import type` is erased at compile time, so client components can import this file safely.
 
 // GET /api/library → each recipe plus how many entries it has
+// GET /api/library → each book, its number of cooks, and each cook's date + rating
 export type BookWithCount = Prisma.RecipeGetPayload<{
-  include: { _count: { select: { entries: true } } };
+  include: {
+    _count: { select: { entries: true } };
+    entries: { select: { cookedOn: true; rating: true } };
+  };
 }>;
 
 // GET /api/library/[recipeId] → one recipe plus its entries

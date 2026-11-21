@@ -90,7 +90,7 @@ export const RecipeDetail = ({ recipe }: RecipeDetailProps) => (
     {/* Header: image + at-a-glance stats side by side */}
     <div className="mt-6 grid gap-8 lg:grid-cols-2">
       {recipe.image && (
-        <img
+        <img loading="lazy" decoding="async"
           src={recipe.image}
           alt={recipe.label}
           className="ring-base-300 aspect-[4/3] w-full rounded-2xl object-cover shadow-sm ring-1"

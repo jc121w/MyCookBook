@@ -17,7 +17,12 @@ export async function GET() {
     const userId = session.user.id;
 
     const recipes = await prisma.recipe.findMany({
-      include: { _count: { select: { entries: true } } },
+      include: {
+        _count: { select: { entries: true } },
+        // Just the cook dates and ratings (not notes or photos): the shelf's filters
+        // ("cooked this month", "rated 4+") and "What should I cook?" use them
+        entries: { select: { cookedOn: true, rating: true } },
+      },
       where: {
         userId: userId,
       },

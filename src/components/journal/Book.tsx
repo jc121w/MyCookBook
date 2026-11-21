@@ -58,7 +58,12 @@ type BookProps = {
 };
 
 export function Book({ book, onClose }: BookProps) {
-  const { data: entries = [], isLoading } = useQuery<RecipeEntry[]>({
+  const {
+    data: entries = [],
+    isLoading,
+    isError: entriesFailed,
+    refetch: refetchEntries,
+  } = useQuery<RecipeEntry[]>({
     queryKey: ["entries", book.id],
     queryFn: async () => {
       const response = await axios.get<BookWithEntries>(
@@ -252,6 +257,8 @@ export function Book({ book, onClose }: BookProps) {
                   {page.kind === "journal" && (
                     <JournalList
                       justAdded={justAdded}
+                      loadFailed={entriesFailed}
+                      onRetry={() => refetchEntries()}
                       entries={shownEntries}
                       isLoading={isLoading}
                       onOpen={setOpenEntryId}

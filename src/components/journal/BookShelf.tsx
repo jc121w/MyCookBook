@@ -23,7 +23,14 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { BookWithCount } from "@/app/types";
+import {
+  allTags,
+  matchesFilter,
+  matchesSearch,
+  type ShelfFilter,
+} from "@/lib/shelf";
 import { Book } from "./Book";
+import { ShelfControls } from "./ShelfControls";
 
 // ── Look & feel ──────────────────────────────────────────
 
@@ -315,12 +322,46 @@ export function BookShelf({
   });
 
   const [groupBy, setGroupBy] = useState<GroupBy>("dishType");
+
+  // ── Search, filters and "What should I cook?" (logic in src/lib/shelf.ts) ──
+  const [query, setQuery] = useState("");
+  const [chosenFilter, setFilter] = useState<ShelfFilter>("all");
+  const tags = allTags(books);
+  // A tag filter whose tag no longer exists (you removed it) falls back to All
+  const filter =
+    chosenFilter.startsWith("tag:") &&
+    !tags.some((t) => `tag:${t}`.toLowerCase() === chosenFilter.toLowerCase())
+      ? "all"
+      : chosenFilter;
+  const visibleBooks = books.filter(
+    (b) => matchesSearch(b, query) && matchesFilter(b, filter),
+  );
+  const filtering = query.trim() !== "" || filter !== "all";
+
+  // Keyboard: Escape cancels the remove dialog, or else closes the open book
+  useEffect(() => {
+    if (openId == null && toRemove == null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (toRemove) {
+        if (!removeBook.isPending) setToRemove(null);
+      } else close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
   const [shelfRef, shelfWidth] = useWidth<HTMLDivElement>();
 
   // While a book is open it's a modal: lock the page behind it so it can't scroll.
   // (Scrolling INSIDE the book still works.) The scrollbar's width is added as padding
   // so the page doesn't jump sideways when the scrollbar disappears.
   const isOpen = open != null;
+
+  // When a book opens, move keyboard focus into it (once per book)
+  const bookRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (openId != null) bookRef.current?.focus({ preventScroll: true });
+  }, [openId]);
   useEffect(() => {
     if (!isOpen) return;
     const { overflow, paddingRight } = document.body.style;
@@ -353,7 +394,7 @@ export function BookShelf({
   const shelves =
     shelfWidth > 0
       ? packShelves(
-          groupBooks(books, groupBy),
+          groupBooks(visibleBooks, groupBy),
           shelfWidth - SHELF_PADDING_X * 2,
         )
       : [];
@@ -383,7 +424,9 @@ export function BookShelf({
           <p className="text-sm opacity-60">
             {books.length === 0
               ? "Your shelf is empty. Create your first recipe."
-              : `${books.length} ${books.length === 1 ? "book" : "books"}`}
+              : filtering
+                ? `${visibleBooks.length} of ${books.length} books`
+                : `${books.length} ${books.length === 1 ? "book" : "books"}`}
           </p>
         </div>
         <div
@@ -405,6 +448,35 @@ export function BookShelf({
           </div>
         </div>
       </div>
+
+      {books.length > 0 && (
+        <ShelfControls
+          query={query}
+          onQuery={setQuery}
+          filter={filter}
+          onFilter={setFilter}
+          tags={tags}
+        />
+      )}
+      {filtering && visibleBooks.length === 0 && (
+        <div className="border-base-content/20 mb-3 flex flex-wrap items-center justify-center gap-2 rounded-xl border border-dashed p-4 text-center">
+          <p className="font-serif text-sm italic opacity-70">
+            No books match
+            {query.trim() ? <> &ldquo;{query.trim()}&rdquo;</> : " this filter"}
+            .
+          </p>
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            onClick={() => {
+              setQuery("");
+              setFilter("all");
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
 
       {/* Bookcase frame */}
       <div
@@ -530,6 +602,12 @@ export function BookShelf({
             >
               <motion.div
                 layoutId={`book-${open.id}`}
+                // A modal dialog for screen readers; focus moves into it when it opens
+                role="dialog"
+                aria-modal="true"
+                aria-label={open.label}
+                tabIndex={-1}
+                ref={bookRef}
                 // Start in the spine's pulled-out tilt and straighten WHILE growing,
                 // instead of snapping straight on the first frame
                 initial={
@@ -539,7 +617,7 @@ export function BookShelf({
                 }
                 animate={{ rotate: 0, y: 0 }}
                 transition={{ duration: 0.4, ease: EASE, ...LAYOUT_TRANSITION }}
-                className="bg-base-100 pointer-events-auto relative h-[calc(min(92vw,calc(85svh*2/3))*1.5)] w-[min(92vw,calc(85svh*2/3))] overflow-hidden rounded-l-sm rounded-r-xl shadow-2xl"
+                className="bg-base-100 pointer-events-auto relative h-[calc(min(92vw,calc(85svh*2/3))*1.5)] w-[min(92vw,calc(85svh*2/3))] overflow-hidden rounded-l-sm rounded-r-xl shadow-2xl outline-none"
               >
                 <OpenSpine id={open.id} />
                 {/* Pages sit to the right of the spine */}
@@ -647,10 +725,6 @@ export function BookShelf({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* TODO(you, stretch): close the book when Escape is pressed.
-          Hint: useEffect that adds a "keydown" listener on window while `open` is set,
-          and removes it in the cleanup function. */}
     </>
   );
 }

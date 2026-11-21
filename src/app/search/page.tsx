@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { ResultsGrid } from "@/components/ResultGrid";
 import {
   DIET_FILTERS,
@@ -51,6 +51,7 @@ function RecipeSearch() {
   const page = Math.max(1, Number(params.get("page")) || 1);
 
   const [text, setText] = useState(query);
+  const searchInput = useRef<HTMLInputElement>(null);
   // keep the box in sync on back/forward
   useEffect(() => {
     setText(query);
@@ -118,24 +119,56 @@ function RecipeSearch() {
           </p>
         </div>
 
+        {/* One rounded field: icon, text, clear, and the Search button tucked inside */}
         <form
+          role="search"
           onSubmit={(e) => {
             e.preventDefault();
             setParams({ q: text.trim() || null });
           }}
-          className="mx-auto mt-6 flex w-full max-w-xl gap-2"
+          className="group bg-base-200/60 hover:bg-base-200 focus-within:bg-base-100 focus-within:border-primary/50 focus-within:ring-primary/15 relative mx-auto mt-6 flex h-14 w-full max-w-xl items-center rounded-full border border-transparent pr-1.5 pl-5 transition-colors focus-within:ring-4"
         >
-          <label className="input input-lg flex flex-1 items-center gap-2">
-            <Search className="h-5 w-5 opacity-50" />
-            <input
-              type="search"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="grow"
-              aria-label="Search recipes"
-            />
-          </label>
-          <button type="submit" className="btn btn-primary btn-lg">
+          <Search
+            aria-hidden
+            className="h-5 w-5 shrink-0 opacity-45 transition-opacity group-focus-within:opacity-80"
+          />
+          <input
+            ref={searchInput}
+            type="search"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape" && text) {
+                e.preventDefault();
+                setText("");
+              }
+            }}
+            placeholder="Try “chicken curry” or “pasta”"
+            aria-label="Search recipes"
+            enterKeyHint="search"
+            autoComplete="off"
+            spellCheck={false}
+            // The browser's own clear "×" is hidden: ours is below
+            className="placeholder:text-base-content/45 h-full min-w-0 flex-1 bg-transparent px-3 text-base outline-none focus-visible:outline-none [&::-webkit-search-cancel-button]:appearance-none"
+          />
+          {text && (
+            <button
+              type="button"
+              onClick={() => {
+                setText("");
+                setParams({ q: null }); // back to the ideas
+                searchInput.current?.focus();
+              }}
+              aria-label="Clear search"
+              className="hover:bg-base-content/10 mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full opacity-55 transition hover:opacity-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            type="submit"
+            className="btn btn-primary h-11 min-h-0 shrink-0 rounded-full px-5 font-serif"
+          >
             Search
           </button>
         </form>
@@ -166,7 +199,7 @@ function RecipeSearch() {
           {activeFilters > 0 && (
             <button
               type="button"
-              className="btn btn-ghost btn-sm gap-1"
+              className="btn btn-ghost btn-sm h-8 min-h-0 gap-1 rounded-full text-xs font-normal"
               onClick={() =>
                 setParams({ meal: null, cuisine: null, diet: null })
               }
@@ -188,7 +221,7 @@ function RecipeSearch() {
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
-                  className="btn btn-sm btn-outline rounded-full font-normal"
+                  className="border-base-content/15 hover:border-base-content/30 hover:bg-base-200/70 h-8 rounded-full border px-3.5 text-sm transition-colors"
                   onClick={() => setParams({ q: s })}
                 >
                   {s}
@@ -213,6 +246,7 @@ function RecipeSearch() {
               isLoading={results.isLoading || (!current && results.isFetching)}
               error={results.error}
               hits={current?.hits}
+              onRetry={() => results.refetch()}
             />
 
             {/* Pagination */}
@@ -308,7 +342,12 @@ function FilterSelect({
   return (
     <select
       aria-label={label}
-      className={`select select-sm w-auto ${value ? "select-primary" : ""}`}
+      // Pills, like the shelf's filter chips; filled in when a filter is on
+      className={`select select-sm h-8 w-auto rounded-full text-xs ${
+        value
+          ? "bg-primary text-primary-content border-primary"
+          : "border-base-content/15 hover:border-base-content/30 bg-transparent"
+      }`}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || null)}
     >

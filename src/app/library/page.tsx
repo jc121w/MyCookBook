@@ -31,6 +31,7 @@ const Library = () => {
     data: recipes,
     isLoading: isLoadingRecipes,
     error: recipesError,
+    refetch,
   } = useQuery(libraryQuery); // shared with search (src/lib/library.ts)
   const modalRef = useRef<HTMLDialogElement>(null);
   if (isLoadingRecipes) {
@@ -43,7 +44,7 @@ const Library = () => {
     );
   }
   if (recipesError) {
-    return <RedirectMessage error={recipesError} />;
+    return <RedirectMessage error={recipesError} onRetry={() => refetch()} />;
   }
 
   return (

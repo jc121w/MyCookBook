@@ -9,7 +9,7 @@
 ## ✨ Features
 
 - **Find recipes** from thousands on Edamam, with meal, cuisine and diet filters, or write your own.
-- **A bookshelf library.** Each recipe is a book, shelved by dish, cuisine or meal. Drag a book to the trash to remove it.
+- **A bookshelf library.** Each recipe is a book, shelved by dish, cuisine or meal. Search it, filter it (cooked this month, rated 4+, never cooked, your own tags), or ask **What should I cook?**
 - **Open a book** to see its cover, the recipe (ingredients, steps, nutrition), and its journal.
 - **Journal entries** for every cook: date, photo, notes, and a star rating (half stars, or exact to 0.1).
 - **Edit anything:** add your own steps or photo to any recipe; change an entry's date, rating, photo or notes later.
@@ -86,12 +86,12 @@ src/lib/                    auth, database, Edamam, validation, stats
 | GET · PATCH · DELETE | `/api/library/:id` | one book with its entries · edit it · remove it |
 | POST | `/api/recipes/custom` | create your own recipe |
 | POST | `/api/entries` | log a cook |
+| PUT | `/api/library/:id/tags` | set a book's tags |
 | PATCH · DELETE | `/api/entries/:id` | edit an entry (date, rating, photo, notes) · delete it |
 
 Every route checks that you're signed in and that the book or entry is yours.
 
 ## 🗺️ Ideas for later
 
-- [ ] Your own shelves and tags ("Weeknight", "Holidays")
 - [ ] Share a book with a read-only link
 - [ ] Clean up photos from forms that were cancelled

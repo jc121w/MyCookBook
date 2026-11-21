@@ -16,7 +16,7 @@ export default function ProfileCard({ name, email, img }: ProfileCardProps) {
     <div className="flex cursor-default flex-col items-center gap-2 is-drawer-close:hidden">
       <div className="avatar p-3">
         <div className="w-20 rounded-full">
-          {img ? <img src={img} /> : <CircleUser className="h-auto w-20" />}
+          {img ? <img src={img} alt="" /> : <CircleUser className="h-auto w-20" />}
         </div>
       </div>
       <h2> {name}</h2>

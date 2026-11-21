@@ -4,6 +4,7 @@ import type { RecipeEntry } from "@prisma/client";
 import { ChefHat } from "lucide-react";
 import type { BookWithCount } from "@/app/types";
 import { titleCase } from "@/lib/recipeOptions";
+import { BookTags } from "./BookTags";
 
 type CoverPageProps = {
   book: BookWithCount;
@@ -33,7 +34,7 @@ export function CoverPage({ book, entries, isLoading }: CoverPageProps) {
       <div className="w-[88%] -rotate-[1.5deg] bg-white p-2 pb-3 shadow-md">
         <div className="bg-base-200 aspect-[4/3] overflow-hidden">
           {coverImage ? (
-            <img
+            <img loading="lazy" decoding="async"
               src={coverImage}
               alt=""
               className="h-full w-full object-cover"
@@ -60,6 +61,10 @@ export function CoverPage({ book, entries, isLoading }: CoverPageProps) {
             {categories}
           </p>
         )}
+        {/* Your own tags ("Weeknight"): filter the shelf by them */}
+        <div className="mt-3">
+          <BookTags book={book} />
+        </div>
       </div>
 
       <Flourish />

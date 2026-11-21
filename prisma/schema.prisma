@@ -85,6 +85,7 @@ model Recipe {
   label           String
   image           String?
   imageKey        String? // UploadThing file key, so the file can be deleted (null for Edamam images)
+  tags            String[] @default([]) // your own labels: "Weeknight", "Holidays"
   source          String
   yield           Int
   url             String?

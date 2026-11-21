@@ -5,6 +5,7 @@ import axios from "axios";
 import { BookCheck, BookPlus, LogIn } from "lucide-react";
 import Link from "next/link";
 import type { Recipe } from "@/app/types";
+import { useToast } from "@/components/Toaster";
 import { libraryQuery } from "@/lib/library";
 
 // A clear, labeled button under each search result:
@@ -25,11 +26,24 @@ export function AddToShelfButton({
   const signedOut =
     axios.isAxiosError(shelf.error) && shelf.error.response?.status === 401;
 
+  const toast = useToast();
   const add = useMutation({
-    mutationFn: () => axios.post("/api/library", recipe),
-    // Refetch the shelf: this card flips to "On your shelf", and the library page is current
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: libraryQuery.queryKey }),
+    mutationFn: () =>
+      axios.post<{ id: number }>("/api/library", recipe).then((r) => r.data),
+    onSuccess: (saved) => {
+      // Refetch the shelf: this card flips to "On your shelf", and the library page is current
+      void queryClient.invalidateQueries({ queryKey: libraryQuery.queryKey });
+      // …and offer to go straight to the new book
+      toast({
+        message: (
+          <>
+            <span className="font-semibold">{recipe.label}</span> is on your
+            shelf
+          </>
+        ),
+        action: { label: "Open book", href: `/library?book=${saved.id}` },
+      });
+    },
   });
 
   const base = "btn btn-sm w-full gap-1.5 font-serif";

@@ -179,7 +179,7 @@ function Favorite({ favorite }: { favorite: Cooked }) {
       >
         <span className="-rotate-1 bg-white p-2 pb-3 shadow-md transition-transform group-hover:rotate-0">
           {favorite.photo ? (
-            <img
+            <img loading="lazy" decoding="async"
               src={favorite.photo}
               alt=""
               className="aspect-[4/3] w-full object-cover"
@@ -226,7 +226,7 @@ function OnRepeat({ recipes }: { recipes: Cooked[] }) {
                 {i + 1}
               </span>
               {r.photo ? (
-                <img
+                <img loading="lazy" decoding="async"
                   src={r.photo}
                   alt=""
                   className="h-12 w-12 shrink-0 rounded-md object-cover shadow-sm"

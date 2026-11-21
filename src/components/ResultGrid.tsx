@@ -9,10 +9,12 @@ export const ResultsGrid = ({
   isLoading,
   error,
   hits,
+  onRetry,
 }: {
   isLoading: boolean;
   error: unknown;
   hits?: SearchPage["hits"];
+  onRetry?: () => void;
 }) => {
   if (isLoading) {
     return (
@@ -26,8 +28,15 @@ export const ResultsGrid = ({
 
   if (error) {
     return (
-      <div className="alert alert-error mx-auto max-w-md">
-        <span>Something went wrong loading recipes. Please try again.</span>
+      <div role="alert" className="alert alert-error mx-auto max-w-md">
+        <span>
+          Couldn&apos;t load recipes. Check your connection and try again.
+        </span>
+        {onRetry && (
+          <button type="button" className="btn btn-sm" onClick={onRetry}>
+            Try again
+          </button>
+        )}
       </div>
     );
   }

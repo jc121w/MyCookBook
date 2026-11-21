@@ -28,6 +28,8 @@ type JournalListProps = {
   onOpen: (entryId: number) => void;
   onAdd: () => void;
   justAdded?: number | null; // a brand-new entry: its card drops in
+  loadFailed?: boolean; // the entries couldn't be loaded
+  onRetry?: () => void;
 };
 
 export const DROP_IN_MS = 550; // how long a new card takes to drop in
@@ -38,7 +40,30 @@ export function JournalList({
   onOpen,
   onAdd,
   justAdded = null,
+  loadFailed = false,
+  onRetry,
 }: JournalListProps) {
+  if (loadFailed && entries.length === 0) {
+    return (
+      <div
+        role="alert"
+        className="flex flex-col items-center gap-3 pt-8 text-center"
+      >
+        <p className="font-serif italic opacity-60">
+          Couldn&apos;t open your journal.
+        </p>
+        {onRetry && (
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost"
+            onClick={onRetry}
+          >
+            Try again
+          </button>
+        )}
+      </div>
+    );
+  }
   if (isLoading) {
     return (
       <p className="pt-8 text-center font-serif italic opacity-40">
@@ -298,7 +323,7 @@ function Thumbnail({ entry }: { entry: RecipeEntry }) {
   return (
     <>
       {entry.photoUrl ? (
-        <img
+        <img loading="lazy" decoding="async"
           src={entry.photoUrl}
           alt=""
           className="h-full w-full object-cover"
@@ -331,7 +356,7 @@ function MountedPhoto({ src }: { src: string }) {
   return (
     <span className="mx-auto block w-[88%] -rotate-1 bg-white p-2 shadow-md">
       <span className="relative block">
-        <img src={src} alt="" className="aspect-[4/3] w-full object-cover" />
+        <img loading="lazy" decoding="async" src={src} alt="" className="aspect-[4/3] w-full object-cover" />
         <PhotoCorners size={20} />
       </span>
     </span>
