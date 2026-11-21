@@ -1,7 +1,8 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { useNarrow } from "@/lib/useNarrow";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState, useRef } from "react";
 import { ResultsGrid } from "@/components/ResultGrid";
@@ -52,6 +53,7 @@ function RecipeSearch() {
 
   const [text, setText] = useState(query);
   const searchInput = useRef<HTMLInputElement>(null);
+  const narrow = useNarrow();
   // keep the box in sync on back/forward
   useEffect(() => {
     setText(query);
@@ -143,7 +145,10 @@ function RecipeSearch() {
                 setText("");
               }
             }}
-            placeholder="Try “chicken curry” or “pasta”"
+            // The example only fits on wider screens
+            placeholder={
+              narrow ? "Search recipes" : "Try “chicken curry” or “pasta”"
+            }
             aria-label="Search recipes"
             enterKeyHint="search"
             autoComplete="off"
@@ -165,11 +170,14 @@ function RecipeSearch() {
               <X className="h-4 w-4" />
             </button>
           )}
+          {/* "Search" on wider screens; a round arrow on small phones, to leave room for typing */}
           <button
             type="submit"
-            className="btn btn-primary h-11 min-h-0 shrink-0 rounded-full px-5 font-serif"
+            aria-label="Search"
+            className="btn btn-primary h-11 min-h-0 w-11 shrink-0 rounded-full p-0 font-serif sm:w-auto sm:px-5"
           >
-            Search
+            <ArrowRight className="h-5 w-5 sm:hidden" aria-hidden />
+            <span className="hidden sm:inline">Search</span>
           </button>
         </form>
 

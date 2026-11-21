@@ -210,7 +210,7 @@ export default function RecipeForm({
           <Field label="Recipe name" required error={errors.label?.message}>
             <input
               className="input w-full"
-              placeholder="e.g. Grandma's Lasagna"
+              placeholder="e.g. Grandma's pie"
               autoFocus={!editing}
               {...register("label", {
                 required: "Give your recipe a name",
@@ -225,7 +225,7 @@ export default function RecipeForm({
           <Field label="Source" hint="Who or where it's from">
             <input
               className="input w-full"
-              placeholder="Grandma, a cookbook, a website…"
+              placeholder="Grandma, a blog…"
               {...register("source")}
             />
           </Field>
@@ -261,7 +261,8 @@ export default function RecipeForm({
 
         <Section title="Details">
           {/* One-line labels + units inside the inputs, so all three inputs line up */}
-          <div className="grid grid-cols-3 items-start gap-3">
+          {/* Phones: Servings + Time side by side, Calories below. Wider: all three in a row */}
+          <div className="grid grid-cols-2 items-start gap-3 sm:grid-cols-3">
             <Field label="Servings" required error={errors.yield?.message}>
               <input
                 type="number"
@@ -288,7 +289,11 @@ export default function RecipeForm({
                 />
               </UnitInput>
             </Field>
-            <Field label="Calories" error={errors.caloriesPerServing?.message}>
+            <Field
+              label="Calories"
+              error={errors.caloriesPerServing?.message}
+              className="col-span-2 sm:col-span-1"
+            >
               <UnitInput unit="/ serving">
                 <input
                   type="number"
@@ -341,9 +346,7 @@ export default function RecipeForm({
                 <input
                   className="input w-full"
                   placeholder={
-                    index === 0
-                      ? "e.g. 2 cups flour"
-                      : `Ingredient ${index + 1}`
+                    index === 0 ? "2 cups flour" : `Ingredient ${index + 1}`
                   }
                   aria-label={`Ingredient ${index + 1}`}
                   {...register(`ingredientLines.${index}.value`)}
@@ -472,15 +475,17 @@ function Field({
   required,
   error,
   children,
+  className = "",
 }: {
   label: string;
   hint?: string;
   required?: boolean;
   error?: string;
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <label className="flex flex-col gap-1.5">
+    <label className={`flex flex-col gap-1.5 ${className}`}>
       <span className="truncate text-sm font-medium">
         {label}
         {required && <span className="text-error ml-0.5">*</span>}

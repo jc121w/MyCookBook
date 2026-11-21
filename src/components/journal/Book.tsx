@@ -4,7 +4,7 @@ import type { RecipeEntry } from "@prisma/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { BookWithCount, BookWithEntries } from "@/app/types";
 import axios from "axios";
 import { EntryForm } from "./EntryForm";
@@ -19,6 +19,7 @@ import {
 } from "./JournalPage";
 import { RecipePage } from "./RecipePage";
 import RecipeForm from "@/components/form/RecipeForm";
+import { SlidingTabs } from "@/components/SlidingTabs";
 
 // The book has three pages: cover, the recipe, and the journal (a list of entries).
 // `kind` is the tag that tells TypeScript which one you have.
@@ -307,7 +308,15 @@ export function Book({ book, onClose }: BookProps) {
                 <ChevronLeft className="h-5 w-5" />
               </button>
               {/* Where you are: a tab per page, the current one filled; tap any to jump */}
-              <PageTabs current={current} onSelect={goTo} />
+              <SlidingTabs
+                label="Pages"
+                options={pages.map((p, i) => ({
+                  value: i,
+                  label: PAGE_LABELS[p.kind],
+                }))}
+                value={current}
+                onChange={goTo}
+              />
               <button
                 className="btn btn-circle"
                 onClick={() => go(1)}
@@ -321,71 +330,5 @@ export function Book({ book, onClose }: BookProps) {
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-// The tab bar: one filled pill that slides to the current tab. It's an ordinary child of
-// the book (no layoutId), so when the book opens it simply grows along with it instead
-// of flying in on its own, and it only animates when you actually change tabs.
-function PageTabs({
-  current,
-  onSelect,
-}: {
-  current: number;
-  onSelect: (i: number) => void;
-}) {
-  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
-  // Every tab's spot, measured once (and again if the tab sizes change). Knowing them all
-  // up front means a tap slides the pill in that same render, with no measure-then-move
-  // delay. offsetLeft/offsetWidth are layout sizes, unaffected by the book's opening scale.
-  const [spots, setSpots] = useState<{ x: number; width: number }[]>([]);
-  useLayoutEffect(() => {
-    const measure = () =>
-      setSpots(
-        tabs.current.map((t) => ({
-          x: t?.offsetLeft ?? 0,
-          width: t?.offsetWidth ?? 0,
-        })),
-      );
-    measure();
-    const observer = new ResizeObserver(measure);
-    tabs.current.forEach((t) => t && observer.observe(t));
-    return () => observer.disconnect();
-  }, []);
-  const pill = spots[current];
-
-  return (
-    <nav
-      aria-label="Pages"
-      className="bg-base-200/70 relative flex gap-1 rounded-full p-1"
-    >
-      {pill && (
-        <motion.span
-          aria-hidden
-          className="bg-primary absolute top-1 bottom-1 left-0 rounded-full shadow-sm"
-          initial={false} // first placement: no animation
-          animate={{ x: pill.x, width: pill.width }}
-          transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-        />
-      )}
-      {PAGES.map((p, i) => (
-        <button
-          key={p.kind}
-          ref={(el) => {
-            tabs.current[i] = el;
-          }}
-          type="button"
-          onClick={() => onSelect(i)}
-          aria-current={i === current ? "page" : undefined}
-          className={`relative rounded-full px-3 py-1 font-serif text-sm transition-colors ${
-            i === current
-              ? "text-primary-content"
-              : "opacity-60 hover:opacity-100"
-          }`}
-        >
-          {PAGE_LABELS[p.kind]}
-        </button>
-      ))}
-    </nav>
   );
 }

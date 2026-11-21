@@ -98,7 +98,7 @@ const SignUp = () => {
           <input
             type="text"
             className="grow"
-            placeholder="3–20 letters, numbers, _ or -"
+            placeholder="e.g. home_cook"
             autoComplete="username"
             {...register("username", {
               required: true,

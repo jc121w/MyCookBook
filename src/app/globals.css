@@ -82,3 +82,16 @@ body {
   }
 }
 
+/* Number inputs: no spinner arrows (they crowd small fields; typing and the phone's number pad still work) */
+@layer base {
+  input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+

@@ -3,6 +3,7 @@
 import { Search, Tag, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { BUILT_IN_FILTERS, type ShelfFilter } from "@/lib/shelf";
+import { useNarrow } from "@/lib/useNarrow";
 
 // The shelf's search field, with filter chips underneath.
 //   "/" anywhere on the page jumps to the search; Escape clears it.
@@ -20,6 +21,7 @@ export function ShelfControls({
   tags: string[];
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const narrow = useNarrow(); // the long hint doesn't fit on small phones
 
   // "/" focuses the search (unless you're already typing somewhere)
   useEffect(() => {
@@ -55,7 +57,9 @@ export function ShelfControls({
               onQuery("");
             }
           }}
-          placeholder="Search by name, source or tag"
+          placeholder={
+            narrow ? "Search books" : "Search by name, source or tag"
+          }
           aria-label="Search your shelf"
           enterKeyHint="search"
           autoComplete="off"

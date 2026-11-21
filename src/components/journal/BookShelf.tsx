@@ -29,6 +29,7 @@ import {
   matchesSearch,
   type ShelfFilter,
 } from "@/lib/shelf";
+import { SlidingTabs } from "@/components/SlidingTabs";
 import { Book } from "./Book";
 import { ShelfControls } from "./ShelfControls";
 
@@ -432,20 +433,17 @@ export function BookShelf({
         <div
           className={`flex items-center gap-2 ${books.length === 0 ? "invisible" : ""}`}
         >
-          <span className="text-xs opacity-60">Sort shelves by</span>
-          <div role="tablist" className="tabs tabs-box tabs-sm">
-            {GROUP_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                role="tab"
-                aria-selected={groupBy === option.value}
-                className={`tab ${groupBy === option.value ? "tab-active" : ""}`}
-                onClick={() => setGroupBy(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          {/* Hidden on small phones, where it wraps; the tabs still say it to screen readers */}
+          <span className="hidden text-xs opacity-60 sm:inline">
+            Sort shelves by
+          </span>
+          <SlidingTabs
+            label="Sort shelves by"
+            variant="soft"
+            options={GROUP_OPTIONS}
+            value={groupBy}
+            onChange={setGroupBy}
+          />
         </div>
       </div>
 
