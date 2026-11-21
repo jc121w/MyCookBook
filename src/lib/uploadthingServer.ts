@@ -30,6 +30,40 @@ export function fileKeyOf(
   }
 }
 
+// Edamam's image links are signed and expire about an hour after a search. To keep a
+// shelved recipe's picture, we copy it into our own UploadThing storage and save that
+// permanent URL. Only Edamam's image host is allowed: otherwise anyone could make our
+// server download any URL into our storage.
+const EDAMAM_IMAGE_HOST = "edamam-product-images.s3.amazonaws.com";
+
+export async function copyEdamamImage(
+  url: unknown,
+): Promise<{ url: string; key: string } | null> {
+  if (typeof url !== "string") return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:" || parsed.hostname !== EDAMAM_IMAGE_HOST)
+    return null;
+
+  try {
+    // Name it after the image's own file name ("bb5bad….jpg"), without the signed query
+    const name = parsed.pathname.split("/").pop() || "recipe.jpg";
+    const result = await utapi.uploadFilesFromUrl({ url, name });
+    if (result.error || !result.data) {
+      console.error("Copying the Edamam image failed:", result.error);
+      return null;
+    }
+    return { url: result.data.ufsUrl, key: result.data.key };
+  } catch (error) {
+    console.error("Copying the Edamam image failed:", error);
+    return null;
+  }
+}
+
 // Is any remaining row still showing this file?
 async function stillUsed(key: string) {
   const [entries, recipes] = await Promise.all([

@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/db";
+import { copyEdamamImage } from "@/lib/uploadthingServer";
 import { extractRecipeId } from "@/lib/utils/recipe";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -39,13 +40,34 @@ export async function POST(req: Request) {
         { status: 401 },
       );
     const body = await req.json();
-    console.log(body);
     const edamamId = extractRecipeId(body.uri);
     const userId = session.user.id;
-    console.log(body);
+
+    // The picture. Edamam's link expires within an hour, so keep our own copy:
+    //  - already on your shelf with a picture we host (copied before, or your own photo
+    //    from editing it)? keep that one, and don't copy again
+    //  - otherwise copy it into UploadThing; if that fails, fall back to Edamam's link
+    //    so shelving still works (the picture just won't last)
+    const existing = await prisma.recipe.findUnique({
+      where: { userId_edamamId: { userId, edamamId } },
+      select: { image: true, imageKey: true },
+    });
+    let image: { image: string | null; imageKey: string | null };
+    if (existing?.imageKey) {
+      image = { image: existing.image, imageKey: existing.imageKey };
+    } else {
+      const copy = await copyEdamamImage(body.image);
+      image = copy
+        ? { image: copy.url, imageKey: copy.key }
+        : {
+            image: typeof body.image === "string" ? body.image : null,
+            imageKey: null,
+          };
+    }
+
     const recipeData = {
       label: body.label,
-      image: body.image,
+      ...image,
       source: body.source,
       url: body.url,
       yield: body.yield,

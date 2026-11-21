@@ -34,7 +34,11 @@ export async function GET(request: NextRequest) {
   try {
     const res = await fetch(url.toString(), {
       headers: { "Edamam-Account-User": process.env.EDAMAM_USER_ID! },
-      next: { revalidate: 600 }, // the same search within 10 minutes is served from cache
+      // Never cache on the server: Edamam's image links are signed S3 URLs that expire
+      // an hour after Edamam creates them, and a cached response (Vercel keeps it for a
+      // long time, serving it stale while it refreshes) would hand out dead links.
+      // The browser still keeps results for 10 minutes (the search page's staleTime).
+      cache: "no-store",
     });
 
     if (!res.ok) {

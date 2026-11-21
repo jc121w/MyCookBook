@@ -328,13 +328,24 @@ function PageTabs({
   onSelect: (i: number) => void;
 }) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [pill, setPill] = useState<{ x: number; width: number } | null>(null);
-
-  // offsetLeft/offsetWidth are layout sizes, unaffected by the book's opening scale
+  // Every tab's spot, measured once (and again if the tab sizes change). Knowing them all
+  // up front means a tap slides the pill in that same render, with no measure-then-move
+  // delay. offsetLeft/offsetWidth are layout sizes, unaffected by the book's opening scale.
+  const [spots, setSpots] = useState<{ x: number; width: number }[]>([]);
   useLayoutEffect(() => {
-    const tab = tabs.current[current];
-    if (tab) setPill({ x: tab.offsetLeft, width: tab.offsetWidth });
-  }, [current]);
+    const measure = () =>
+      setSpots(
+        tabs.current.map((t) => ({
+          x: t?.offsetLeft ?? 0,
+          width: t?.offsetWidth ?? 0,
+        })),
+      );
+    measure();
+    const observer = new ResizeObserver(measure);
+    tabs.current.forEach((t) => t && observer.observe(t));
+    return () => observer.disconnect();
+  }, []);
+  const pill = spots[current];
 
   return (
     <nav
