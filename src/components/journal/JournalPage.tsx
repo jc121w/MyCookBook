@@ -220,20 +220,12 @@ const NEW_ENTRY_ID = "new-entry";
 
 // The new-entry form's page: grows from the "New entry" card and shrinks back into it
 // (Save or Cancel), the same way an entry opens and closes
-export function NewEntrySheet({
-  children,
-  hidden = false,
-}: {
-  children: React.ReactNode;
-  hidden?: boolean; // on another tab: invisible, but kept (with your draft) for when you return
-}) {
+export function NewEntrySheet({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       layoutId={NEW_ENTRY_ID}
       transition={{ duration: 0.35, ease: EASE, ...GROW }}
-      // invisible (not display:none) keeps its size, so it doesn't re-grow from
-      // nothing when shown again; it also can't be clicked or tabbed into
-      className={`bg-base-100 absolute inset-0 z-10 ${hidden ? "invisible" : ""}`}
+      className="bg-base-100 absolute inset-0 z-10"
       style={{ borderRadius: 0 }}
     >
       {/* The form fades in after the box starts growing, and out before it shrinks,

@@ -184,6 +184,7 @@ export function Book({ book, onClose }: BookProps) {
   function goTo(target: number) {
     if (target < 0 || target >= pages.length || target === current) return;
     setOpenEntryId(null); // leaving the journal closes any open entry
+    setWriting(false); // …and an unfinished new entry
     setPage([target, target > current ? 1 : -1]);
   }
 
@@ -283,15 +284,10 @@ export function Book({ book, onClose }: BookProps) {
 
               {/* The entry form grows out of the "New entry" card, and on Save or Cancel
                   shrinks back into it, just like an entry opening and closing.
-                  After a Save, the celebration starts once it has shrunk away.
-                  On the other tabs it's hidden, not closed, so your draft is still
-                  there when you come back to the journal. */}
+                  After a Save, the celebration starts once it has shrunk away. */}
               <AnimatePresence onExitComplete={handleSwapDone}>
-                {writing && (
-                  <NewEntrySheet
-                    key="new-entry"
-                    hidden={page.kind !== "journal"}
-                  >
+                {page.kind === "journal" && writing && (
+                  <NewEntrySheet key="new-entry">
                     <EntryForm
                       recipeId={book.id}
                       onCancel={() => setWriting(false)}
