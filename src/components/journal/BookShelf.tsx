@@ -539,7 +539,7 @@ export function BookShelf({
                 }
                 animate={{ rotate: 0, y: 0 }}
                 transition={{ duration: 0.4, ease: EASE, ...LAYOUT_TRANSITION }}
-                className="bg-base-100 pointer-events-auto relative aspect-[2/3] w-[min(92vw,calc(85vh*2/3))] overflow-hidden rounded-l-sm rounded-r-xl shadow-2xl"
+                className="bg-base-100 pointer-events-auto relative h-[calc(min(92vw,calc(85svh*2/3))*1.5)] w-[min(92vw,calc(85svh*2/3))] overflow-hidden rounded-l-sm rounded-r-xl shadow-2xl"
               >
                 <OpenSpine id={open.id} />
                 {/* Pages sit to the right of the spine */}
